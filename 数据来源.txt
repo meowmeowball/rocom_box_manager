@@ -1,0 +1,11 @@
+蛋组描述：
+https://roco.gptvip.chat/egg-group-query 抓取的
+https://roco.gptvip.chat/api/egg-groups
+
+精灵描述：
+https://github.com/aoe-top/rocom.aoe.top/tree/main/public/data/BinData 开源的
+https://rocom.aoe.top/data/Pets.json
+
+
+
+

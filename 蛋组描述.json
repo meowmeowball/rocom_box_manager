@@ -1,0 +1,125 @@
+{
+    "groups": [
+        {
+            "description": "卡洛西亚传说中体型巨大的精灵。",
+            "folded_count": 22,
+            "group_display": "巨灵组",
+            "group_id": 2,
+            "hatchable_member_count": 64,
+            "member_count": 64
+        },
+        {
+            "description": "生活在沙滩、沼泽等环境的精灵。",
+            "folded_count": 15,
+            "group_display": "两栖组",
+            "group_id": 3,
+            "hatchable_member_count": 52,
+            "member_count": 53
+        },
+        {
+            "description": "在精灵学中被归类为虫系的精灵。",
+            "folded_count": 11,
+            "group_display": "昆虫组",
+            "group_id": 4,
+            "hatchable_member_count": 35,
+            "member_count": 35
+        },
+        {
+            "description": "能够在天空飞或划为鸟类的精灵。",
+            "folded_count": 28,
+            "group_display": "天空组",
+            "group_id": 5,
+            "hatchable_member_count": 71,
+            "member_count": 71
+        },
+        {
+            "description": "广泛分布在卡洛西亚内陆的精灵。",
+            "folded_count": 34,
+            "group_display": "动物组",
+            "group_id": 6,
+            "hatchable_member_count": 91,
+            "member_count": 91
+        },
+        {
+            "description": "外表可爱喜欢与洛克亲近的精灵。",
+            "folded_count": 32,
+            "group_display": "妖精组",
+            "group_id": 7,
+            "hatchable_member_count": 89,
+            "member_count": 90
+        },
+        {
+            "description": "在精灵学中外观拟态植物的精灵。",
+            "folded_count": 17,
+            "group_display": "植物组",
+            "group_id": 8,
+            "hatchable_member_count": 46,
+            "member_count": 46
+        },
+        {
+            "description": "在精灵学中外观拟态洛克的精灵。",
+            "folded_count": 18,
+            "group_display": "拟人组",
+            "group_id": 9,
+            "hatchable_member_count": 49,
+            "member_count": 49
+        },
+        {
+            "description": "在精灵学中形态较为柔软的精灵。",
+            "folded_count": 9,
+            "group_display": "软体组",
+            "group_id": 10,
+            "hatchable_member_count": 41,
+            "member_count": 41
+        },
+        {
+            "description": "在精灵学中外观拟态矿物的精灵。",
+            "folded_count": 10,
+            "group_display": "大地组",
+            "group_id": 11,
+            "hatchable_member_count": 35,
+            "member_count": 35
+        },
+        {
+            "description": "由元素或者能量构成身体的精灵。",
+            "folded_count": 11,
+            "group_display": "魔力组",
+            "group_id": 12,
+            "hatchable_member_count": 41,
+            "member_count": 41
+        },
+        {
+            "description": "广泛分布在卡洛西亚水域的精灵。",
+            "folded_count": 18,
+            "group_display": "海洋组",
+            "group_id": 13,
+            "hatchable_member_count": 42,
+            "member_count": 42
+        },
+        {
+            "description": "在精灵学中被归类为龙系的精灵。",
+            "folded_count": 4,
+            "group_display": "龙组",
+            "group_id": 14,
+            "hatchable_member_count": 9,
+            "member_count": 9
+        },
+        {
+            "description": "在精灵学中被归类为机械的精灵。",
+            "folded_count": 11,
+            "group_display": "机械组",
+            "group_id": 15,
+            "hatchable_member_count": 25,
+            "member_count": 25
+        },
+        {
+            "description": "不知是官方没做还是人家性冷淡。",
+            "folded_count": 10,
+            "group_display": "无法孵蛋",
+            "group_id": 1,
+            "hatchable_member_count": 0,
+            "member_count": 24
+        }
+    ],
+    "ok": true
+}
