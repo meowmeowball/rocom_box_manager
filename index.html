@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洛克王国精灵管理器</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --c-bg: #f0f2f5;
+  --c-surface: #ffffff;
+  --c-border: #e0e3e8;
+  --c-text: #1a1d23;
+  --c-text-secondary: #6b7280;
+  --c-text-muted: #9ca3af;
+  --c-primary: #4f8f5e;
+  --c-primary-light: #e8f5e9;
+  --c-primary-dark: #3d6f4a;
+  --c-danger: #d14343;
+  --c-danger-light: #fef2f2;
+  --c-success: #0f7b4e;
+  --c-warning: #d97706;
+  --c-info: #3b82f6;
+  --c-info-light: #eff6ff;
+  --c-green-bg: #dcfce7;
+  --c-red-bg: #fee2e2;
+  --c-tag-blue: #dbeafe;
+  --c-tag-blue-text: #1e40af;
+  --c-tag-purple: #f3e8ff;
+  --c-tag-purple-text: #6b21a8;
+  --c-tag-amber: #fef3c7;
+  --c-tag-amber-text: #92400e;
+  --c-tag-teal: #ccfbf1;
+  --c-tag-teal-text: #115e59;
+  --c-overlay: rgba(0,0,0,0.35);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+  --transition: 0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--c-bg); color: var(--c-text); line-height: 1.5; min-height: 100vh;
+}
+
+/* ===== Header ===== */
+.app-header {
+  background: linear-gradient(135deg, #3d6f4a 0%, #4f8f5e 50%, #5da06b 100%);
+  color: #fff; padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 50;
+}
+.app-header h1 { font-size: 1.25rem; font-weight: 700; white-space: nowrap; }
+.app-header .header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border: none; border-radius: var(--radius-sm);
+  font-size: 0.875rem; font-weight: 500; cursor: pointer;
+  transition: var(--transition); white-space: nowrap; outline: none; font-family: inherit;
+}
+.btn-primary { background: var(--c-primary); color: #fff; }
+.btn-primary:hover { background: var(--c-primary-dark); }
+.btn-success { background: var(--c-success); color: #fff; }
+.btn-success:hover { opacity: 0.9; }
+.btn-danger { background: var(--c-danger); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-outline { background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border); }
+.btn-outline:hover { background: #f9fafb; border-color: #c0c5cc; }
+.btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+.btn-xs { padding: 2px 8px; font-size: 0.75rem; border-radius: 3px; }
+
+/* ===== Layout ===== */
+.main-content { max-width: 1500px; margin: 0 auto; padding: 20px 24px; }
+
+/* ===== Cards ===== */
+.card { background: var(--c-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); margin-bottom: 20px; overflow: hidden; }
+.card-header { padding: 14px 20px; border-bottom: 1px solid var(--c-border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.card-header h2 { font-size: 1rem; font-weight: 600; }
+.card-body { padding: 20px; }
+
+/* ===== Form ===== */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field label { font-size: 0.8rem; font-weight: 600; color: var(--c-text-secondary); }
+.form-field label .req { color: var(--c-danger); }
+.form-field input, .form-field select {
+  padding: 7px 10px; border: 1px solid var(--c-border); border-radius: var(--radius-sm);
+  font-size: 0.875rem; font-family: inherit; transition: var(--transition);
+  background: var(--c-surface); color: var(--c-text);
+}
+.form-field input:focus, .form-field select:focus {
+  outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(79,143,94,0.15);
+}
+.form-field input.invalid { border-color: var(--c-danger); }
+
+/* Name autocomplete */
+.autocomplete-wrap { position: relative; }
+.autocomplete-wrap input { width: 100%; }
+.autocomplete-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  max-height: 200px; overflow-y: auto;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
+  display: none; font-size: 0.85rem;
+}
+.autocomplete-dropdown.show { display: block; }
+.autocomplete-dropdown .ac-item {
+  padding: 7px 12px; cursor: pointer; border-bottom: 1px solid #f1f3f5;
+}
+.autocomplete-dropdown .ac-item:hover, .autocomplete-dropdown .ac-item.active { background: var(--c-primary-light); }
+.autocomplete-dropdown .ac-item .ac-egg { font-size: 0.73rem; color: var(--c-text-muted); margin-left: 6px; }
+
+/* Form Nature Matrix */
+.form-matrix {
+  display: inline-grid; grid-template-columns: 52px repeat(6, 44px);
+  gap: 2px; user-select: none; align-self: start;
+}
+.form-matrix .fm-cell {
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px 2px; font-size: 0.7rem; border: 1px solid var(--c-border);
+  border-radius: 3px; cursor: pointer; transition: var(--transition);
+  text-align: center; min-height: 28px;
+}
+.form-matrix .fm-cell:hover:not(.fm-corner):not(.fm-diag) { transform: scale(1.08); z-index: 1; }
+.form-matrix .fm-corner { background: transparent; border: none; cursor: default; }
+.form-matrix .fm-rhdr { background: var(--c-red-bg); color: #991b1b; font-weight: 600; cursor: default; font-size: 0.65rem; }
+.form-matrix .fm-chdr { background: var(--c-green-bg); color: #166534; font-weight: 600; cursor: default; font-size: 0.65rem; }
+.form-matrix .fm-diag { background: #f9fafb; color: #d1d5db; cursor: not-allowed; font-size: 1rem; }
+.form-matrix .fm-cell.fm-selected { background: var(--c-primary); color: #fff; border-color: var(--c-primary-dark); }
+.form-nature-display { font-size: 0.82rem; color: var(--c-primary-dark); font-weight: 600; margin-top: 4px; min-height: 20px; }
+
+/* ===== IV Slider + Editable ===== */
+.iv-slider-group { display: flex; gap: 14px; flex-wrap: wrap; }
+.iv-slider-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 72px;
+}
+.iv-slider-item .iv-label { font-size: 0.75rem; font-weight: 600; }
+.iv-slider-item .iv-value-display {
+  font-size: 1.1rem; font-weight: 700; min-width: 36px; text-align: center;
+  padding: 2px 6px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition);
+}
+.iv-slider-item .iv-value-display:hover { box-shadow: var(--shadow-sm); }
+.iv-slider-item .iv-value-display.val-0 { color: var(--c-text-muted); background: #f1f3f5; }
+.iv-slider-item .iv-value-display.val-7 { color: #b45309; background: #fef3c7; }
+.iv-slider-item .iv-value-display.val-8 { color: #0369a1; background: #e0f2fe; }
+.iv-slider-item .iv-value-display.val-9 { color: #7c3aed; background: #ede9fe; }
+.iv-slider-item .iv-value-display.val-10 { color: #be185d; background: #fce7f3; }
+.iv-slider-item .iv-value-edit {
+  font-size: 0.95rem; font-weight: 700; width: 36px; text-align: center;
+  padding: 3px 2px; border: 2px solid var(--c-primary); border-radius: var(--radius-sm);
+  outline: none; display: none;
+}
+.iv-slider-item.editing .iv-value-display { display: none; }
+.iv-slider-item.editing .iv-value-edit { display: block; }
+.iv-slider-item input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 64px; height: 6px; border-radius: 3px;
+  background: linear-gradient(to right, #d1d5db 0%, #fbbf24 25%, #3b82f6 50%, #8b5cf6 75%, #ec4899 100%);
+  outline: none; cursor: pointer;
+}
+.iv-slider-item input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--c-surface); border: 2px solid var(--c-primary);
+  cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.iv-slider-item input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--c-surface); border: 2px solid var(--c-primary);
+  cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.iv-slider-ticks {
+  display: flex; justify-content: space-between; width: 64px;
+  font-size: 0.6rem; color: var(--c-text-muted); padding: 0 2px;
+}
+
+/* ===== Radio chips (specialty single-select) ===== */
+.radio-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.radio-group label {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border: 1px solid var(--c-border); border-radius: 20px;
+  font-size: 0.8rem; cursor: pointer; transition: var(--transition); user-select: none;
+}
+.radio-group label:hover { background: var(--c-primary-light); border-color: var(--c-primary); }
+.radio-group input[type="radio"] { display: none; }
+.radio-group input[type="radio"]:checked + span { color: var(--c-primary); }
+.radio-group label:has(input:checked) { background: var(--c-primary-light); border-color: var(--c-primary); }
+
+/* Checkbox chips */
+.chk-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chk-group label {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border: 1px solid var(--c-border); border-radius: 20px;
+  font-size: 0.8rem; cursor: pointer; transition: var(--transition); user-select: none;
+}
+.chk-group label:hover { background: var(--c-primary-light); border-color: var(--c-primary); }
+.chk-group input[type="checkbox"] { display: none; }
+.chk-group input[type="checkbox"]:checked + span { color: var(--c-primary); }
+.chk-group label:has(input:checked) { background: var(--c-primary-light); border-color: var(--c-primary); }
+
+/* Egg display */
+.egg-display { display: flex; gap: 4px; flex-wrap: wrap; min-height: 32px; align-items: center; }
+.egg-display .tag { background: var(--c-tag-blue); color: var(--c-tag-blue-text); padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 500; }
+.egg-display .tag-unknown { background: var(--c-danger-light); color: var(--c-danger); }
+
+/* ===== Batch bar ===== */
+.batch-bar {
+  display: none; align-items: center; gap: 12px; padding: 10px 16px;
+  background: var(--c-info-light); border-radius: var(--radius); margin-bottom: 12px;
+  font-size: 0.875rem; flex-wrap: wrap;
+}
+.batch-bar.active { display: flex; }
+
+/* ===== Table ===== */
+.table-wrap { overflow-x: auto; border: 1px solid var(--c-border); border-radius: var(--radius); background: var(--c-surface); }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1300px; }
+thead th {
+  background: #f8fafc; padding: 10px 8px; text-align: left;
+  border-bottom: 2px solid var(--c-border); font-weight: 600;
+  color: var(--c-text-secondary); white-space: nowrap; position: sticky; top: 0; z-index: 2;
+}
+thead th:first-child { width: 40px; text-align: center; padding: 10px 6px; }
+tbody td { padding: 8px; border-bottom: 1px solid #f1f3f5; vertical-align: middle; white-space: nowrap; }
+tbody tr:hover { background: #f8fafc; }
+tbody tr.selected-row { background: var(--c-primary-light); }
+.col-iv-plus { background: var(--c-green-bg); }
+.col-iv-minus { background: var(--c-red-bg); }
+.cell-tags { display: flex; gap: 3px; flex-wrap: wrap; }
+.cell-tags .tag { padding: 1px 8px; border-radius: 10px; font-size: 0.73rem; font-weight: 500; }
+.tag-egg { background: var(--c-tag-blue); color: var(--c-tag-blue-text); }
+.tag-spec { background: var(--c-tag-amber); color: var(--c-tag-amber-text); }
+.tag-medal { background: var(--c-tag-purple); color: var(--c-tag-purple-text); }
+.tag-box { background: var(--c-tag-teal); color: var(--c-tag-teal-text); }
+
+/* ===== Filter Nature Matrix ===== */
+.matrix-wrapper { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.matrix-container { overflow-x: auto; }
+.matrix {
+  display: inline-grid; grid-template-columns: 72px repeat(6, 64px);
+  gap: 3px; user-select: none;
+}
+.matrix .cell {
+  display: flex; align-items: center; justify-content: center;
+  padding: 7px 4px; font-size: 0.78rem; border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition);
+  text-align: center; min-height: 36px;
+}
+.matrix .cell:hover:not(.corner):not(.diagonal) { transform: scale(1.05); z-index: 1; }
+.matrix .corner { background: transparent; border: none; cursor: default; }
+.matrix .row-hdr { background: var(--c-red-bg); color: #991b1b; font-weight: 600; cursor: pointer; font-size: 0.73rem; }
+.matrix .row-hdr:hover { background: #fecaca; }
+.matrix .col-hdr { background: var(--c-green-bg); color: #166534; font-weight: 600; cursor: pointer; font-size: 0.73rem; }
+.matrix .col-hdr:hover { background: #bbf7d0; }
+.matrix .diagonal { background: #f9fafb; color: #d1d5db; cursor: not-allowed; font-size: 1.2rem; }
+.matrix .cell.selected { background: var(--c-primary); color: #fff; border-color: var(--c-primary-dark); }
+.matrix-legend { font-size: 0.78rem; color: var(--c-text-secondary); line-height: 1.8; }
+.matrix-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+.dot-plus { background: #166534; } .dot-minus { background: #991b1b; }
+
+/* ===== Float Filter ===== */
+.filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border: 1px solid var(--c-border); border-radius: 20px;
+  font-size: 0.8rem; cursor: pointer; transition: var(--transition);
+  background: var(--c-surface); white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--c-primary); }
+.filter-chip.active { background: var(--c-primary-light); border-color: var(--c-primary); color: var(--c-primary-dark); }
+.filter-chip .count { font-size: 0.7rem; color: var(--c-text-muted); }
+.filter-mode-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 12px; font-size: 0.73rem; font-weight: 600;
+  background: #fef3c7; color: #92400e; cursor: pointer; margin-left: 6px;
+}
+.filter-mode-badge.and { background: #dbeafe; color: #1e40af; }
+
+.float-panel {
+  position: fixed; z-index: 100; background: var(--c-surface);
+  border: 1px solid var(--c-border); box-shadow: var(--shadow-lg);
+  border-radius: var(--radius); width: 240px; max-height: 360px; display: none;
+  flex-direction: column;
+}
+.float-panel .float-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--c-border); font-weight: 600; font-size: 0.85rem; }
+.float-panel .float-header .float-close { cursor: pointer; background: none; border: none; font-size: 1.1rem; color: var(--c-text-muted); }
+.float-panel .float-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+.float-panel .float-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.82rem; transition: var(--transition); }
+.float-panel .float-item:hover { background: #f9fafb; }
+.float-panel .float-item input[type="checkbox"] { accent-color: var(--c-primary); }
+.float-panel .float-item .item-count { margin-left: auto; color: var(--c-text-muted); font-size: 0.73rem; }
+.float-panel .float-footer { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-top: 1px solid var(--c-border); font-size: 0.78rem; }
+
+/* ===== Modals ===== */
+.modal-overlay { position: fixed; inset: 0; background: var(--c-overlay); display: flex; align-items: center; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-box { background: var(--c-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90%; max-width: 540px; max-height: 85vh; overflow-y: auto; padding: 0; }
+.modal-box.wide { max-width: 95%; max-height: 90vh; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--c-border); }
+.modal-header h3 { font-size: 1.05rem; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--c-text-muted); padding: 4px; }
+.modal-body { padding: 20px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--c-border); }
+
+.conflict-info { display: flex; gap: 20px; justify-content: center; margin: 16px 0; }
+.conflict-info .ci-item { text-align: center; }
+.conflict-info .ci-num { font-size: 2rem; font-weight: 700; }
+
+/* ===== Stats ===== */
+.stats-container { padding: 4px; }
+.stats-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; padding: 10px; background: #f8fafc; border-radius: var(--radius); }
+.stats-toolbar select { padding: 5px 8px; border: 1px solid var(--c-border); border-radius: 4px; font-size: 0.82rem; }
+.stats-grid-wrap { overflow: auto; max-height: 60vh; }
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 800px; }
+.stats-table th, .stats-table td { border: 1px solid var(--c-border); padding: 6px 8px; text-align: center; vertical-align: top; min-width: 90px; }
+.stats-table th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+.stats-entry { text-align: left; margin: 3px 0; padding: 3px 5px; background: #e0edfd; border-radius: 3px; font-size: 0.73rem; }
+.stats-entry .se-name { font-weight: 600; }
+.stats-entry .se-ivs { color: var(--c-text-secondary); }
+.stats-empty { color: var(--c-text-muted); font-style: italic; font-size: 0.73rem; }
+
+/* Stats nature matrix */
+.stats-matrix { display: inline-grid; grid-template-columns: 52px repeat(6, 40px); gap: 2px; user-select: none; }
+.stats-matrix .sm-cell { display: flex; align-items: center; justify-content: center; padding: 3px 2px; font-size: 0.68rem; border: 1px solid var(--c-border); border-radius: 3px; cursor: pointer; transition: var(--transition); text-align: center; min-height: 24px; }
+.stats-matrix .sm-cell:hover:not(.sm-corner):not(.sm-diag) { transform: scale(1.08); z-index: 1; }
+.stats-matrix .sm-corner { background: transparent; border: none; cursor: default; }
+.stats-matrix .sm-rhdr { background: var(--c-red-bg); color: #991b1b; font-weight: 600; cursor: pointer; font-size: 0.62rem; }
+.stats-matrix .sm-rhdr:hover { background: #fecaca; }
+.stats-matrix .sm-chdr { background: var(--c-green-bg); color: #166534; font-weight: 600; cursor: pointer; font-size: 0.62rem; }
+.stats-matrix .sm-chdr:hover { background: #bbf7d0; }
+.stats-matrix .sm-diag { background: #f9fafb; color: #d1d5db; cursor: not-allowed; font-size: 0.85rem; }
+.stats-matrix .sm-cell.sm-selected { background: var(--c-primary); color: #fff; border-color: var(--c-primary-dark); }
+
+/* Stats egg tags */
+.stats-egg-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.stats-egg-tags label { display: flex; align-items: center; gap: 3px; padding: 2px 9px; border: 1px solid var(--c-border); border-radius: 14px; font-size: 0.75rem; cursor: pointer; transition: var(--transition); user-select: none; }
+.stats-egg-tags label:hover { border-color: var(--c-primary); background: var(--c-primary-light); }
+.stats-egg-tags label:has(input:checked) { background: var(--c-primary-light); border-color: var(--c-primary); }
+.stats-egg-tags input[type=checkbox] { accent-color: var(--c-primary); width: 13px; height: 13px; }
+
+.toggle-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer; user-select: none; }
+.toggle-switch .ts-track { width: 40px; height: 22px; background: #d1d5db; border-radius: 11px; position: relative; transition: var(--transition); }
+.toggle-switch .ts-track.on { background: var(--c-primary); }
+.toggle-switch .ts-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: var(--transition); box-shadow: var(--shadow-sm); }
+.toggle-switch .ts-track.on .ts-thumb { left: 20px; }
+
+/* ===== Breeding ===== */
+.breeding-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+.breeding-source { padding: 16px; background: var(--c-primary-light); border-radius: var(--radius); text-align: center; }
+.breeding-source .bs-name { font-size: 1.2rem; font-weight: 700; color: var(--c-primary-dark); }
+.breeding-source .bs-detail { font-size: 0.82rem; color: var(--c-text-secondary); margin-top: 4px; }
+.breeding-results { max-height: 60vh; overflow-y: auto; }
+.breeding-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: var(--radius-sm); margin-bottom: 6px; cursor: pointer; transition: var(--transition); }
+.breeding-item:hover { background: #f9fafb; }
+.breeding-item.best { border-left: 3px solid #16a34a; background: #f0fdf4; }
+.breeding-item.good { border-left: 3px solid #6366f1; background: #eef2ff; }
+.breeding-item.ok { border-left: 3px solid #d97706; background: #fffbeb; }
+.breeding-item.low { border-left: 3px solid #9ca3af; }
+.breeding-item .bi-name { font-weight: 600; min-width: 90px; }
+.breeding-item .bi-info { font-size: 0.78rem; color: var(--c-text-secondary); flex: 1; }
+.breeding-item .bi-score { font-size: 0.73rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.bi-score-best { background: #dcfce7; color: #166534; }
+.bi-score-good { background: #e0e7ff; color: #3730a3; }
+.bi-score-ok { background: #fef3c7; color: #92400e; }
+
+/* ===== Toasts ===== */
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 10px 18px; border-radius: var(--radius-sm); color: #fff; font-size: 0.85rem; box-shadow: var(--shadow-md); animation: toastIn 0.3s ease; max-width: 380px; }
+.toast-success { background: var(--c-success); }
+.toast-error { background: var(--c-danger); }
+.toast-info { background: var(--c-info); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+
+
+/* ===== Box Organizer Sidebar ===== */
+.app-layout { display: flex; gap: 0; max-width: 1900px; margin: 0 auto; padding: 0 24px; align-items: flex-start; }
+.app-layout .main-content { flex: 1; min-width: 0; padding: 20px 0; transition: margin-right 0.3s ease; }
+.box-sidebar {
+  width: 0; overflow: hidden; background: var(--c-surface);
+  border-left: 1px solid var(--c-border); box-shadow: -2px 0 12px rgba(0,0,0,0.05);
+  transition: width 0.3s ease; position: sticky; top: 68px;
+  max-height: calc(100vh - 84px); display: flex; flex-direction: column;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+.box-sidebar.active { width: 380px; min-width: 340px; }
+.box-sidebar-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; border-bottom: 1px solid var(--c-border);
+  background: linear-gradient(135deg, #3d6f4a 0%, #4f8f5e 100%);
+  color: #fff; flex-shrink: 0;
+}
+.box-sidebar-header h3 { font-size: 0.95rem; font-weight: 600; }
+.box-sidebar-header .box-close { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; opacity: 0.8; }
+.box-sidebar-header .box-close:hover { opacity: 1; }
+.box-sidebar-body { flex: 1; overflow-y: auto; padding: 12px; }
+.box-sidebar-footer {
+  display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--c-border);
+  background: #f8fafc; flex-shrink: 0;
+}
+.box-sidebar-footer .btn { flex: 1; justify-content: center; }
+
+.box-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.box-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 8px; border: 2px solid var(--c-border); border-radius: var(--radius);
+  cursor: pointer; transition: var(--transition); text-align: center; min-height: 64px;
+  position: relative; user-select: none;
+}
+.box-card:hover { border-color: var(--c-primary); background: var(--c-primary-light); }
+.box-card.selected { border-color: var(--c-primary); background: var(--c-primary-light); box-shadow: 0 0 0 2px rgba(79,143,94,0.3); }
+.box-card.full { border-color: var(--c-danger); background: var(--c-danger-light); }
+.box-card .box-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; word-break: break-all; }
+.box-card .box-count { font-size: 0.75rem; color: var(--c-text-secondary); }
+.box-card .box-count.full-count { color: var(--c-danger); font-weight: 600; }
+.box-card .box-delete {
+  position: absolute; top: 3px; right: 5px; width: 18px; height: 18px;
+  border-radius: 50%; border: none; background: var(--c-danger); color: #fff;
+  font-size: 0.65rem; cursor: pointer; display: none; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.box-card:hover .box-delete { display: flex; }
+.box-card.undeletable .box-delete { display: none !important; }
+.box-card-new {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 8px; border: 2px dashed var(--c-border); border-radius: var(--radius);
+  cursor: pointer; transition: var(--transition); text-align: center; min-height: 64px;
+  color: var(--c-text-muted);
+}
+.box-card-new:hover { border-color: var(--c-primary); color: var(--c-primary); background: var(--c-primary-light); }
+.box-card-new .box-new-icon { font-size: 1.4rem; font-weight: 300; }
+.box-card-new .box-new-label { font-size: 0.75rem; margin-top: 2px; }
+.box-new-input { width: 100%; padding: 3px 6px; border: 1px solid var(--c-primary); border-radius: 4px; font-size: 0.8rem; text-align: center; outline: none; }
+
+@media (max-width: 768px) {
+  .box-sidebar.active { width: 280px; min-width: 260px; }
+  .app-layout { padding: 0 8px; }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .app-header { padding: 12px 16px; }
+  .main-content { padding: 12px 8px; }
+  .form-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .breeding-layout { grid-template-columns: 1fr; }
+  .modal-box { width: 96%; max-width: none; }
+}
+
+.hidden { display: none !important; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--c-text-muted); }
+.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>🌱 洛克王国精灵管理器</h1>
+  <div class="header-actions">
+    <button class="btn btn-outline" style="color:#000000;border-color:rgba(255,255,255,0.4);" onclick="UI.triggerImport()">📂 导入 CSV</button>
+    <button class="btn btn-outline" style="color:#000000;border-color:rgba(255,255,255,0.4);" onclick="CSVManager.export()">💾 导出 CSV</button>
+    <button class="btn btn-outline" style="color:#000000;border-color:rgba(255,255,255,0.4);" onclick="StatsModal.open()">📊 种公统计</button>
+    <span style="font-size:0.82rem;opacity:0.85;">共 <strong id="headerCount">18</strong> 只精灵</span>
+  </div>
+</header>
+
+<div class="app-layout" id="appLayout">
+<div class="main-content" id="mainContent">
+
+<!-- ===== ADD FORM ===== -->
+<div class="card">
+  <div class="card-header"><h2>✏️ 添加精灵</h2></div>
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="form-field">
+        <label><span class="req">*</span> 精灵名称</label>
+        <div class="autocomplete-wrap" id="f_nameWrap">
+          <input type="text" id="f_name" placeholder="输入精灵名称…" autocomplete="off">
+          <div class="autocomplete-dropdown" id="f_nameDropdown"></div>
+        </div>
+        <div class="egg-display" id="f_eggDisplay"><span style="color:var(--c-text-muted);font-size:0.78rem;">选择名称后自动匹配蛋组</span></div>
+      </div>
+      <div class="form-field">
+        <label>属性 <span style="font-size:0.7rem;color:var(--c-text-muted);">(自动匹配，不可修改)</span></label>
+        <input type="text" id="f_attribute" readonly="" style="background:#f9fafb;color:var(--c-text-secondary);">
+      </div>
+      <div class="form-field">
+        <label>血脉 <span style="font-size:0.7rem;color:var(--c-text-muted);">(自动匹配，可修改)</span></label>
+        <input type="text" id="f_bloodline" placeholder="自动匹配或手动输入…" list="typeSuggest">
+        <datalist id="typeSuggest"><option value="光"></option><option value="奇异"></option><option value="幽"></option><option value="恶"></option><option value="机械"></option><option value="污染"></option><option value="火"></option><option value="电"></option><option value="草"></option><option value="萌"></option></datalist>
+      </div>
+      <div class="form-field">
+        <label><span class="req">*</span> 性别</label>
+        <select id="f_gender"><option value="">请选择</option><option>雄性</option><option>雌性</option></select>
+      </div>
+      <div class="form-field">
+        <label>所在盒子</label>
+        <input type="text" id="f_box" placeholder="手动输入盒子名称…" list="boxSuggest">
+        <datalist id="boxSuggest"></datalist>
+      </div>
+      <div class="form-field" style="grid-column: span 2;">
+        <label>特长 (仅可选一项)</label>
+        <div class="radio-group" id="f_specialty"><label><input type="radio" name="f_specialty" value="无" checked=""><span>无</span></label><label><input type="radio" name="f_specialty" value="爱分享"><span>爱分享</span></label><label><input type="radio" name="f_specialty" value="家里蹲"><span>家里蹲</span></label><label><input type="radio" name="f_specialty" value="热心教"><span>热心教</span></label><label><input type="radio" name="f_specialty" value="慈悲为怀"><span>慈悲为怀</span></label><label><input type="radio" name="f_specialty" value="灵巧"><span>灵巧</span></label><label><input type="radio" name="f_specialty" value="疾行"><span>疾行</span></label><label><input type="radio" name="f_specialty" value="同乘"><span>同乘</span></label><label><input type="radio" name="f_specialty" value="无畏"><span>无畏</span></label><label><input type="radio" name="f_specialty" value="奇袭"><span>奇袭</span></label><label><input type="radio" name="f_specialty" value="亲密"><span>亲密</span></label></div>
+      </div>
+      <div class="form-field" style="grid-column: span 2;">
+        <label>奖牌</label>
+        <div class="chk-group" id="f_medal"><label><input type="checkbox" value="大块头"><span>大块头</span></label><label><input type="checkbox" value="小不点"><span>小不点</span></label><label><input type="checkbox" value="婉转声"><span>婉转声</span></label><label><input type="checkbox" value="粗嗓门"><span>粗嗓门</span></label><label><input type="checkbox" value="其他"><span>其他</span></label><label><input type="checkbox" value="无"><span>无</span></label><label><input type="checkbox" value="炫彩"><span>炫彩</span></label><label><input type="checkbox" value="异色"><span>异色</span></label></div>
+      </div>
+      <div class="form-field" style="grid-column: 1/-1;">
+        <label style="width: 327.7px; height: 19.1975px;"><span class="req">*</span> 性格</label><label style="width: 327.7px; height: 19.1975px; transform: translate(352px, -23.1913px);"><span class="req">*</span>&nbsp;个体值</label>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <div id="f_natureMatrix" class="form-matrix"><div class="fm-cell fm-corner"></div><div class="fm-cell fm-chdr">+生命</div><div class="fm-cell fm-chdr">+物攻</div><div class="fm-cell fm-chdr">+魔攻</div><div class="fm-cell fm-chdr">+物防</div><div class="fm-cell fm-chdr">+魔防</div><div class="fm-cell fm-chdr">+速度</div><div class="fm-cell fm-rhdr">-生命</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('f','逞强')">逞强</div><div class="fm-cell" onclick="FormManager.selectNature('f','理性')">理性</div><div class="fm-cell" onclick="FormManager.selectNature('f','坦率')">坦率</div><div class="fm-cell" onclick="FormManager.selectNature('f','焦虑')">焦虑</div><div class="fm-cell" onclick="FormManager.selectNature('f','热情')">热情</div><div class="fm-cell fm-rhdr">-物攻</div><div class="fm-cell" onclick="FormManager.selectNature('f','沉默')">沉默</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('f','聪明')">聪明</div><div class="fm-cell" onclick="FormManager.selectNature('f','稳重')">稳重</div><div class="fm-cell" onclick="FormManager.selectNature('f','警惕')">警惕</div><div class="fm-cell" onclick="FormManager.selectNature('f','胆小')">胆小</div><div class="fm-cell fm-rhdr">-魔攻</div><div class="fm-cell" onclick="FormManager.selectNature('f','平和')">平和</div><div class="fm-cell" onclick="FormManager.selectNature('f','固执')">固执</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('f','天真')">天真</div><div class="fm-cell" onclick="FormManager.selectNature('f','害羞')">害羞</div><div class="fm-cell" onclick="FormManager.selectNature('f','开朗')">开朗</div><div class="fm-cell fm-rhdr">-物防</div><div class="fm-cell" onclick="FormManager.selectNature('f','忧郁')">忧郁</div><div class="fm-cell" onclick="FormManager.selectNature('f','大胆')">大胆</div><div class="fm-cell" onclick="FormManager.selectNature('f','专注')">专注</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('f','温顺')">温顺</div><div class="fm-cell" onclick="FormManager.selectNature('f','急躁')">急躁</div><div class="fm-cell fm-rhdr">-魔防</div><div class="fm-cell" onclick="FormManager.selectNature('f','粗心')">粗心</div><div class="fm-cell" onclick="FormManager.selectNature('f','调皮')">调皮</div><div class="fm-cell" onclick="FormManager.selectNature('f','偏执')">偏执</div><div class="fm-cell" onclick="FormManager.selectNature('f','懒散')">懒散</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('f','莽撞')">莽撞</div><div class="fm-cell fm-rhdr">-速度</div><div class="fm-cell" onclick="FormManager.selectNature('f','踏实')">踏实</div><div class="fm-cell" onclick="FormManager.selectNature('f','勇敢')">勇敢</div><div class="fm-cell" onclick="FormManager.selectNature('f','冷静')">冷静</div><div class="fm-cell" onclick="FormManager.selectNature('f','悠闲')">悠闲</div><div class="fm-cell" onclick="FormManager.selectNature('f','慎重')">慎重</div><div class="fm-cell fm-diag">╲</div></div>
+            <div class="form-nature-display" id="f_natureDisplay"><span style="color:var(--c-text-muted);">请点击矩阵中的性格</span></div>
+            <input type="hidden" id="f_nature" value="">
+          </div>
+          <div>
+            <div style="font-size:0.78rem;color:var(--c-text-secondary);margin-bottom:6px;">拖动滑块 / 点击数值输入</div>
+            <div class="iv-slider-group" id="f_ivs"><div class="iv-slider-item" id="f_hp_item"><div class="iv-label">❤️生命</div><div class="iv-value-display val-0" id="f_hp_display" onclick="IVManager.startEdit('f','hp')">0</div><input class="iv-value-edit" id="f_hp_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('f','hp')" onkeydown="IVManager.onEditKey(event,'f','hp')"><input type="range" min="0" max="4" value="0" step="1" id="f_hp" oninput="IVManager.onSliderInput('f','hp')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="f_atk_item"><div class="iv-label">⚔️物攻</div><div class="iv-value-display val-0" id="f_atk_display" onclick="IVManager.startEdit('f','atk')">0</div><input class="iv-value-edit" id="f_atk_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('f','atk')" onkeydown="IVManager.onEditKey(event,'f','atk')"><input type="range" min="0" max="4" value="0" step="1" id="f_atk" oninput="IVManager.onSliderInput('f','atk')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="f_spAtk_item"><div class="iv-label">🪄魔攻</div><div class="iv-value-display val-0" id="f_spAtk_display" onclick="IVManager.startEdit('f','spAtk')">0</div><input class="iv-value-edit" id="f_spAtk_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('f','spAtk')" onkeydown="IVManager.onEditKey(event,'f','spAtk')"><input type="range" min="0" max="4" value="0" step="1" id="f_spAtk" oninput="IVManager.onSliderInput('f','spAtk')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="f_def_item"><div class="iv-label">🛡️物防</div><div class="iv-value-display val-0" id="f_def_display" onclick="IVManager.startEdit('f','def')">0</div><input class="iv-value-edit" id="f_def_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('f','def')" onkeydown="IVManager.onEditKey(event,'f','def')"><input type="range" min="0" max="4" value="0" step="1" id="f_def" oninput="IVManager.onSliderInput('f','def')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="f_spDef_item"><div class="iv-label">🔯魔防</div><div class="iv-value-display val-0" id="f_spDef_display" onclick="IVManager.startEdit('f','spDef')">0</div><input class="iv-value-edit" id="f_spDef_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('f','spDef')" onkeydown="IVManager.onEditKey(event,'f','spDef')"><input type="range" min="0" max="4" value="0" step="1" id="f_spDef" oninput="IVManager.onSliderInput('f','spDef')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="f_spd_item"><div class="iv-label">⚡速度</div><div class="iv-value-display val-0" id="f_spd_display" onclick="IVManager.startEdit('f','spd')">0</div><input class="iv-value-edit" id="f_spd_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('f','spd')" onkeydown="IVManager.onEditKey(event,'f','spd')"><input type="range" min="0" max="4" value="0" step="1" id="f_spd" oninput="IVManager.onSliderInput('f','spd')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="FormManager.reset()">↺ 清空表单</button>
+      <button class="btn btn-primary" onclick="FormManager.submit()">✅ 添加精灵</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FILTER CARD ===== -->
+<div class="card">
+  <div class="card-header">
+    <h2>🔍 筛选与搜索</h2><button class="btn btn-outline btn-sm" onclick="BoxPanel.open()">📦 整理精灵</button>
+    <button class="btn btn-outline btn-sm" onclick="FilterManager.clearAll()">↺ 清除所有筛选</button>
+  </div>
+  <div class="card-body">
+    <div class="filter-row" id="filterChips"><div class="filter-chip" onclick="FilterManager.onChipClick('name',this)">🔤 名称</div><div class="filter-chip" onclick="FilterManager.onChipClick('attribute',this)">🔮 属性</div><div class="filter-chip" onclick="FilterManager.onChipClick('bloodline',this)">🏷 血脉</div><div class="filter-chip" onclick="FilterManager.onChipClick('gender',this)">⚥ 性别<span class="filter-mode-badge and" onclick="event.stopPropagation();var m=STATE.filterModes.gender;STATE.filterModes.gender=m==='AND'?'OR':'AND';UI.renderAll();">AND</span></div><div class="filter-chip" onclick="FilterManager.onChipClick('specialty',this)">⭐ 特长<span class="filter-mode-badge and" onclick="event.stopPropagation();var m=STATE.filterModes.specialty;STATE.filterModes.specialty=m==='AND'?'OR':'AND';UI.renderAll();">AND</span></div><div class="filter-chip" onclick="FilterManager.onChipClick('medal',this)">🏅 奖牌<span class="filter-mode-badge and" onclick="event.stopPropagation();var m=STATE.filterModes.medal;STATE.filterModes.medal=m==='AND'?'OR':'AND';UI.renderAll();">AND</span></div><div class="filter-chip" onclick="FilterManager.onChipClick('eggGroup',this)">🥚 蛋组<span class="filter-mode-badge and" onclick="event.stopPropagation();var m=STATE.filterModes.eggGroup;STATE.filterModes.eggGroup=m==='AND'?'OR':'AND';UI.renderAll();">AND</span></div><div class="filter-chip" onclick="FilterManager.onChipClick('box',this)">📦 盒子<span class="filter-mode-badge and" onclick="event.stopPropagation();var m=STATE.filterModes.box;STATE.filterModes.box=m==='AND'?'OR':'AND';UI.renderAll();">AND</span></div></div>
+    <details style="margin-top:12px;">
+      <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;margin-bottom:8px;">🧬 性格矩阵（多选筛选）</summary>
+      <div class="matrix-wrapper">
+        <div class="matrix-container" id="matrixContainer"><div class="matrix"><div class="cell corner"></div><div class="cell col-hdr" onclick="MatrixManager.toggleCol(0)">+生命</div><div class="cell col-hdr" onclick="MatrixManager.toggleCol(1)">+物攻</div><div class="cell col-hdr" onclick="MatrixManager.toggleCol(2)">+魔攻</div><div class="cell col-hdr" onclick="MatrixManager.toggleCol(3)">+物防</div><div class="cell col-hdr" onclick="MatrixManager.toggleCol(4)">+魔防</div><div class="cell col-hdr" onclick="MatrixManager.toggleCol(5)">+速度</div><div class="cell row-hdr" onclick="MatrixManager.toggleRow(0)">-生命</div><div class="cell diagonal">╲</div><div class="cell" onclick="MatrixManager.toggleNature('逞强')">逞强</div><div class="cell" onclick="MatrixManager.toggleNature('理性')">理性</div><div class="cell" onclick="MatrixManager.toggleNature('坦率')">坦率</div><div class="cell" onclick="MatrixManager.toggleNature('焦虑')">焦虑</div><div class="cell" onclick="MatrixManager.toggleNature('热情')">热情</div><div class="cell row-hdr" onclick="MatrixManager.toggleRow(1)">-物攻</div><div class="cell" onclick="MatrixManager.toggleNature('沉默')">沉默</div><div class="cell diagonal">╲</div><div class="cell" onclick="MatrixManager.toggleNature('聪明')">聪明</div><div class="cell" onclick="MatrixManager.toggleNature('稳重')">稳重</div><div class="cell" onclick="MatrixManager.toggleNature('警惕')">警惕</div><div class="cell" onclick="MatrixManager.toggleNature('胆小')">胆小</div><div class="cell row-hdr" onclick="MatrixManager.toggleRow(2)">-魔攻</div><div class="cell" onclick="MatrixManager.toggleNature('平和')">平和</div><div class="cell" onclick="MatrixManager.toggleNature('固执')">固执</div><div class="cell diagonal">╲</div><div class="cell" onclick="MatrixManager.toggleNature('天真')">天真</div><div class="cell" onclick="MatrixManager.toggleNature('害羞')">害羞</div><div class="cell" onclick="MatrixManager.toggleNature('开朗')">开朗</div><div class="cell row-hdr" onclick="MatrixManager.toggleRow(3)">-物防</div><div class="cell" onclick="MatrixManager.toggleNature('忧郁')">忧郁</div><div class="cell" onclick="MatrixManager.toggleNature('大胆')">大胆</div><div class="cell" onclick="MatrixManager.toggleNature('专注')">专注</div><div class="cell diagonal">╲</div><div class="cell" onclick="MatrixManager.toggleNature('温顺')">温顺</div><div class="cell" onclick="MatrixManager.toggleNature('急躁')">急躁</div><div class="cell row-hdr" onclick="MatrixManager.toggleRow(4)">-魔防</div><div class="cell" onclick="MatrixManager.toggleNature('粗心')">粗心</div><div class="cell" onclick="MatrixManager.toggleNature('调皮')">调皮</div><div class="cell" onclick="MatrixManager.toggleNature('偏执')">偏执</div><div class="cell" onclick="MatrixManager.toggleNature('懒散')">懒散</div><div class="cell diagonal">╲</div><div class="cell" onclick="MatrixManager.toggleNature('莽撞')">莽撞</div><div class="cell row-hdr" onclick="MatrixManager.toggleRow(5)">-速度</div><div class="cell" onclick="MatrixManager.toggleNature('踏实')">踏实</div><div class="cell" onclick="MatrixManager.toggleNature('勇敢')">勇敢</div><div class="cell" onclick="MatrixManager.toggleNature('冷静')">冷静</div><div class="cell" onclick="MatrixManager.toggleNature('悠闲')">悠闲</div><div class="cell" onclick="MatrixManager.toggleNature('慎重')">慎重</div><div class="cell diagonal">╲</div></div></div>
+        <div class="matrix-legend">
+          <div><span class="dot dot-plus"></span> 增益属性（列）</div>
+          <div><span class="dot dot-minus"></span> 减益属性（行）</div>
+          <div>点击行列标题批量选择</div>
+          <div>当前选中: <strong id="matrixSelectedCount">0</strong> 个性格</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- ===== BATCH BAR ===== -->
+<div class="batch-bar" id="batchBar">
+  <span>已选择 <strong id="batchCount">0</strong> 只精灵</span>
+  <button class="btn btn-outline btn-sm" onclick="BatchManager.selectAll()">☑ 全选筛选结果</button>
+  <button class="btn btn-outline btn-sm" onclick="BatchManager.clearAll()">☐ 取消</button>
+  <button class="btn btn-danger btn-sm" onclick="BatchManager.deleteSelected()">🗑 批量删除</button>
+  <button class="btn btn-outline btn-sm" onclick="BatchManager.selectFiltered()">📋 选中筛选结果</button>
+</div>
+
+<!-- ===== TABLE ===== -->
+<div class="card">
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap" id="tableWrap" style="display: block;">
+      <table><thead><tr>
+        <th><input type="checkbox" id="selectAllCheckbox" onchange="BatchManager.toggleAll(this.checked)"></th>
+        <th>名称</th><th>属性</th><th>血脉</th><th>性格</th><th>性别</th><th>特长</th><th>奖牌</th><th>蛋组</th><th>盒子</th>
+        <th>❤️生命</th><th>⚔️物攻</th><th>🪄魔攻</th><th style="transform: translate(33px, -45px);">🛡️物防</th><th>🔯魔防</th><th>⚡速度</th>
+        <th>操作</th>
+      </tr></thead>
+      <tbody id="tableBody"><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r0uoh46rw')"></td><td>白金独角兽</td><td></td><td>光</td><td>胆小</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">9</td><td class="">10</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r0uoh46rw')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r0uoh46rw')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「白金独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r0uoh46rw';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r28nuxh3q')"></td><td>白金独角兽</td><td></td><td>光</td><td>沉默</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-medal">小不点</span></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">9</td><td class="">-</td><td class="">-</td><td class="">10</td><td class="">10</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r28nuxh3q')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r28nuxh3q')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「白金独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r28nuxh3q';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rbrgj83ci')"></td><td>白金独角兽</td><td></td><td>光</td><td>平和</td><td>雄性</td><td><div class="cell-tags"><span class="tag tag-spec">灵巧</span></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">-</td><td class="">-</td><td class="">10</td><td class="">10</td><td class="">-</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rbrgj83ci')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rbrgj83ci')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「白金独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rbrgj83ci';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rohplwpxg')"></td><td>白金独角兽</td><td></td><td>光</td><td>踏实</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-medal">粗嗓门</span></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">9</td><td class="">-</td><td class="">-</td><td class="">9</td><td class="">-</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rohplwpxg')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rohplwpxg')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「白金独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rohplwpxg';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rg5ia353p')"></td><td>治愈兔</td><td></td><td>火</td><td>胆小</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">动物组</span><span class="tag tag-egg">妖精组</span></div></td><td></td><td class="">-</td><td class="">-</td><td class="">9</td><td class="">10</td><td class="">-</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rg5ia353p')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rg5ia353p')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「治愈兔」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rg5ia353p';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5ry9i5er1r')"></td><td>小独角兽</td><td></td><td>奇异</td><td>聪明</td><td>雄性</td><td><div class="cell-tags"><span class="tag tag-spec">无畏</span></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">10</td><td class="">-</td><td class="">9</td><td class="">-</td><td class="">-</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5ry9i5er1r')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5ry9i5er1r')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「小独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5ry9i5er1r';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r8vlq0vrf')"></td><td>小独角兽</td><td></td><td>污染</td><td>固执</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">-</td><td class="">10</td><td class="">8</td><td class="">-</td><td class="">-</td><td class="">9</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r8vlq0vrf')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r8vlq0vrf')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「小独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r8vlq0vrf';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rmi9aift4')"></td><td>小独角兽</td><td></td><td>污染</td><td>冷静</td><td>雄性</td><td><div class="cell-tags"><span class="tag tag-spec">亲密</span></div></td><td><div class="cell-tags"><span class="tag tag-medal">其他</span></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">-</td><td class="">9</td><td class="">10</td><td class="">-</td><td class="">10</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rmi9aift4')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rmi9aift4')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「小独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rmi9aift4';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5riakqheq9')"></td><td>格兰球</td><td></td><td>草</td><td>冷静</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">妖精组</span><span class="tag tag-egg">植物组</span></div></td><td></td><td class="">10</td><td class="">-</td><td class="">7</td><td class="">-</td><td class="">-</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5riakqheq9')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5riakqheq9')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「格兰球」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5riakqheq9';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r5c3zk6mq')"></td><td>混乱鱿彩</td><td></td><td>恶</td><td>开朗</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">软体组</span><span class="tag tag-egg">海洋组</span></div></td><td></td><td class="">9</td><td class="">10</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r5c3zk6mq')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r5c3zk6mq')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「混乱鱿彩」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r5c3zk6mq';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rgntys3oe')"></td><td>酷拉</td><td></td><td>电</td><td>胆小</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-medal">其他</span></div></td><td><div class="cell-tags"><span class="tag tag-egg">妖精组</span></div></td><td></td><td class="">9</td><td class="">10</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rgntys3oe')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rgntys3oe')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「酷拉」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rgntys3oe';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r5gmjhcbp')"></td><td>魔眷鸟</td><td></td><td>萌</td><td>开朗</td><td>雄性</td><td><div class="cell-tags"><span class="tag tag-spec">灵巧</span></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">天空组</span><span class="tag tag-egg">妖精组</span></div></td><td></td><td class="">-</td><td class="">8</td><td class="">-</td><td class="">10</td><td class="">-</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r5gmjhcbp')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r5gmjhcbp')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「魔眷鸟」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r5gmjhcbp';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rl5mf2cf7')"></td><td>奇丽草</td><td></td><td>草</td><td>开朗</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">植物组</span></div></td><td></td><td class="">10</td><td class="">-</td><td class="">10</td><td class="">9</td><td class="">-</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rl5mf2cf7')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rl5mf2cf7')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「奇丽草」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rl5mf2cf7';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rh4jb037a')"></td><td>奇丽花</td><td></td><td>草</td><td>胆小</td><td>雄性</td><td><div class="cell-tags"><span class="tag tag-spec">无畏</span></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">植物组</span></div></td><td></td><td class="">10</td><td class="">-</td><td class="">8</td><td class="">-</td><td class="">10</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rh4jb037a')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rh4jb037a')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「奇丽花」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rh4jb037a';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rmt5tuuge')"></td><td>白金独角兽</td><td></td><td>光</td><td>开朗</td><td>雄性</td><td><div class="cell-tags"><span class="tag tag-spec">灵巧</span></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">动物组</span></div></td><td></td><td class="">-</td><td class="">9</td><td class="">7</td><td class="">-</td><td class="">10</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rmt5tuuge')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rmt5tuuge')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「白金独角兽」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rmt5tuuge';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r2tsov4ir')"></td><td>空空颅</td><td></td><td>幽</td><td>开朗</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">巨灵组</span><span class="tag tag-egg">魔力组</span></div></td><td></td><td class="">7</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">10</td><td class="">9</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r2tsov4ir')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r2tsov4ir')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「空空颅」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r2tsov4ir';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5r1t1vzqn8')"></td><td>拉特</td><td></td><td>污染</td><td>开朗</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">妖精组</span></div></td><td></td><td class="">10</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">9</td><td class="">10</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5r1t1vzqn8')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5r1t1vzqn8')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「拉特」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5r1t1vzqn8';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr><tr class=""><td style="text-align:center;"><input type="checkbox" onclick="event.stopPropagation();BatchManager.toggleOne('mq5cqk5rd78as7x0')"></td><td>贝古斯</td><td></td><td>机械</td><td>勇敢</td><td>雄性</td><td><div class="cell-tags"></div></td><td><div class="cell-tags"></div></td><td><div class="cell-tags"><span class="tag tag-egg">机械组</span></div></td><td></td><td class="">9</td><td class="">-</td><td class="">-</td><td class="">8</td><td class="">9</td><td class="">-</td><td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit('mq5cqk5rd78as7x0')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open('mq5cqk5rd78as7x0')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm('确定删除「贝古斯」？')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!=='mq5cqk5rd78as7x0';});saveToStorage();UI.renderAll();toast('已删除','success');}">🗑</button></td></tr></tbody></table>
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none;"><div class="icon">📭</div><p>暂无精灵数据</p></div>
+  </div>
+</div>
+</div>
+
+<!-- HIDDEN INPUTS -->
+<input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="UI.handleFileImport(this)">
+
+<!-- FLOAT PANEL -->
+<div class="float-panel" id="floatPanel">
+  <div class="float-header"><span id="floatTitle"></span><button class="float-close" onclick="FilterManager.closeFloat()">✕</button></div>
+  <div class="float-list" id="floatList"></div>
+  <div class="float-footer">
+    <button class="btn btn-xs btn-outline" onclick="FilterManager.clearFloatField()">清空</button>
+    <span class="filter-mode-badge" id="floatModeBadge" onclick="FilterManager.toggleFloatMode()">AND</span>
+  </div>
+</div>
+
+<!-- CONFLICT MODAL -->
+<div class="modal-overlay" id="conflictModal"><div class="modal-box">
+  <div class="modal-header"><h3>⚠️ 数据冲突</h3><button class="modal-close" onclick="Modal.close('conflictModal')">✕</button></div>
+  <div class="modal-body">
+    <p style="text-align:center;margin-bottom:12px;">本地缓存中已有数据，导入将覆盖现有数据：</p>
+    <div class="conflict-info">
+      <div class="ci-item"><div class="ci-num" style="color:var(--c-info);" id="conflictLocalCount">0</div><div class="ci-label">本地精灵数量</div></div>
+      <div style="display:flex;align-items:center;font-size:1.5rem;">→</div>
+      <div class="ci-item"><div class="ci-num" style="color:var(--c-danger);" id="conflictFileCount">0</div><div class="ci-label">CSV 文件数量</div></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline" onclick="Modal.close('conflictModal')">取消</button><button class="btn btn-danger" onclick="CSVManager.confirmOverwrite()">覆盖本地数据</button></div>
+</div></div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal"><div class="modal-box">
+  <div class="modal-header"><h3>✏️ 编辑精灵</h3><button class="modal-close" onclick="Modal.close('editModal')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-field">
+        <label>精灵名称</label>
+        <input type="text" id="e_name" readonly="" style="background:#f9fafb;">
+        <div class="egg-display" id="e_eggDisplay"></div>
+      </div>
+      <div class="form-field">
+        <label>属性 <span style="font-size:0.7rem;color:var(--c-text-muted);">(自动匹配)</span></label>
+        <input type="text" id="e_attribute" readonly="" style="background:#f9fafb;color:var(--c-text-secondary);">
+      </div>
+      <div class="form-field">
+        <label>血脉 <span style="font-size:0.7rem;color:var(--c-text-muted);">(可修改)</span></label>
+        <input type="text" id="e_bloodline" placeholder="自动匹配或手动输入…">
+      </div>
+      <div class="form-field">
+        <label><span class="req">*</span> 性别</label>
+        <select id="e_gender"><option value="">请选择</option><option>雄性</option><option>雌性</option></select>
+      </div>
+      <div class="form-field">
+        <label>所在盒子</label>
+        <input type="text" id="e_box" placeholder="手动输入盒子名称…" list="boxSuggest">
+      </div>
+      <div class="form-field" style="grid-column: span 2;">
+        <label>特长 (仅可选一项)</label>
+        <div class="radio-group" id="e_specialty"><label><input type="radio" name="e_specialty" value="无" checked=""><span>无</span></label><label><input type="radio" name="e_specialty" value="爱分享"><span>爱分享</span></label><label><input type="radio" name="e_specialty" value="家里蹲"><span>家里蹲</span></label><label><input type="radio" name="e_specialty" value="热心教"><span>热心教</span></label><label><input type="radio" name="e_specialty" value="慈悲为怀"><span>慈悲为怀</span></label><label><input type="radio" name="e_specialty" value="灵巧"><span>灵巧</span></label><label><input type="radio" name="e_specialty" value="疾行"><span>疾行</span></label><label><input type="radio" name="e_specialty" value="同乘"><span>同乘</span></label><label><input type="radio" name="e_specialty" value="无畏"><span>无畏</span></label><label><input type="radio" name="e_specialty" value="奇袭"><span>奇袭</span></label><label><input type="radio" name="e_specialty" value="亲密"><span>亲密</span></label></div>
+      </div>
+      <div class="form-field" style="grid-column: span 2;">
+        <label>奖牌</label>
+        <div class="chk-group" id="e_medal"><label><input type="checkbox" value="大块头"><span>大块头</span></label><label><input type="checkbox" value="小不点"><span>小不点</span></label><label><input type="checkbox" value="婉转声"><span>婉转声</span></label><label><input type="checkbox" value="粗嗓门"><span>粗嗓门</span></label><label><input type="checkbox" value="其他"><span>其他</span></label><label><input type="checkbox" value="无"><span>无</span></label><label><input type="checkbox" value="炫彩"><span>炫彩</span></label><label><input type="checkbox" value="异色"><span>异色</span></label></div>
+      </div>
+      <div class="form-field" style="grid-column: 1/-1;">
+        <label><span class="req">*</span> 性格与个体值</label>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <div id="e_natureMatrix" class="form-matrix"><div class="fm-cell fm-corner"></div><div class="fm-cell fm-chdr">+生命</div><div class="fm-cell fm-chdr">+物攻</div><div class="fm-cell fm-chdr">+魔攻</div><div class="fm-cell fm-chdr">+物防</div><div class="fm-cell fm-chdr">+魔防</div><div class="fm-cell fm-chdr">+速度</div><div class="fm-cell fm-rhdr">-生命</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('e','逞强')">逞强</div><div class="fm-cell" onclick="FormManager.selectNature('e','理性')">理性</div><div class="fm-cell" onclick="FormManager.selectNature('e','坦率')">坦率</div><div class="fm-cell" onclick="FormManager.selectNature('e','焦虑')">焦虑</div><div class="fm-cell" onclick="FormManager.selectNature('e','热情')">热情</div><div class="fm-cell fm-rhdr">-物攻</div><div class="fm-cell" onclick="FormManager.selectNature('e','沉默')">沉默</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('e','聪明')">聪明</div><div class="fm-cell" onclick="FormManager.selectNature('e','稳重')">稳重</div><div class="fm-cell" onclick="FormManager.selectNature('e','警惕')">警惕</div><div class="fm-cell" onclick="FormManager.selectNature('e','胆小')">胆小</div><div class="fm-cell fm-rhdr">-魔攻</div><div class="fm-cell" onclick="FormManager.selectNature('e','平和')">平和</div><div class="fm-cell" onclick="FormManager.selectNature('e','固执')">固执</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('e','天真')">天真</div><div class="fm-cell" onclick="FormManager.selectNature('e','害羞')">害羞</div><div class="fm-cell" onclick="FormManager.selectNature('e','开朗')">开朗</div><div class="fm-cell fm-rhdr">-物防</div><div class="fm-cell" onclick="FormManager.selectNature('e','忧郁')">忧郁</div><div class="fm-cell" onclick="FormManager.selectNature('e','大胆')">大胆</div><div class="fm-cell" onclick="FormManager.selectNature('e','专注')">专注</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('e','温顺')">温顺</div><div class="fm-cell" onclick="FormManager.selectNature('e','急躁')">急躁</div><div class="fm-cell fm-rhdr">-魔防</div><div class="fm-cell" onclick="FormManager.selectNature('e','粗心')">粗心</div><div class="fm-cell" onclick="FormManager.selectNature('e','调皮')">调皮</div><div class="fm-cell" onclick="FormManager.selectNature('e','偏执')">偏执</div><div class="fm-cell" onclick="FormManager.selectNature('e','懒散')">懒散</div><div class="fm-cell fm-diag">╲</div><div class="fm-cell" onclick="FormManager.selectNature('e','莽撞')">莽撞</div><div class="fm-cell fm-rhdr">-速度</div><div class="fm-cell" onclick="FormManager.selectNature('e','踏实')">踏实</div><div class="fm-cell" onclick="FormManager.selectNature('e','勇敢')">勇敢</div><div class="fm-cell" onclick="FormManager.selectNature('e','冷静')">冷静</div><div class="fm-cell" onclick="FormManager.selectNature('e','悠闲')">悠闲</div><div class="fm-cell" onclick="FormManager.selectNature('e','慎重')">慎重</div><div class="fm-cell fm-diag">╲</div></div>
+            <div class="form-nature-display" id="e_natureDisplay"><span style="color:var(--c-text-muted);">请点击矩阵中的性格</span></div>
+            <input type="hidden" id="e_nature" value="">
+          </div>
+          <div>
+            <div style="font-size:0.78rem;color:var(--c-text-secondary);margin-bottom:6px;">拖动滑块 / 点击数值输入</div>
+            <div class="iv-slider-group" id="e_ivs"><div class="iv-slider-item" id="e_hp_item"><div class="iv-label">❤️生命</div><div class="iv-value-display val-0" id="e_hp_display" onclick="IVManager.startEdit('e','hp')">0</div><input class="iv-value-edit" id="e_hp_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('e','hp')" onkeydown="IVManager.onEditKey(event,'e','hp')"><input type="range" min="0" max="4" value="0" step="1" id="e_hp" oninput="IVManager.onSliderInput('e','hp')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="e_atk_item"><div class="iv-label">⚔️物攻</div><div class="iv-value-display val-0" id="e_atk_display" onclick="IVManager.startEdit('e','atk')">0</div><input class="iv-value-edit" id="e_atk_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('e','atk')" onkeydown="IVManager.onEditKey(event,'e','atk')"><input type="range" min="0" max="4" value="0" step="1" id="e_atk" oninput="IVManager.onSliderInput('e','atk')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="e_spAtk_item"><div class="iv-label">🪄魔攻</div><div class="iv-value-display val-0" id="e_spAtk_display" onclick="IVManager.startEdit('e','spAtk')">0</div><input class="iv-value-edit" id="e_spAtk_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('e','spAtk')" onkeydown="IVManager.onEditKey(event,'e','spAtk')"><input type="range" min="0" max="4" value="0" step="1" id="e_spAtk" oninput="IVManager.onSliderInput('e','spAtk')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="e_def_item"><div class="iv-label">🛡️物防</div><div class="iv-value-display val-0" id="e_def_display" onclick="IVManager.startEdit('e','def')">0</div><input class="iv-value-edit" id="e_def_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('e','def')" onkeydown="IVManager.onEditKey(event,'e','def')"><input type="range" min="0" max="4" value="0" step="1" id="e_def" oninput="IVManager.onSliderInput('e','def')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="e_spDef_item"><div class="iv-label">🔯魔防</div><div class="iv-value-display val-0" id="e_spDef_display" onclick="IVManager.startEdit('e','spDef')">0</div><input class="iv-value-edit" id="e_spDef_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('e','spDef')" onkeydown="IVManager.onEditKey(event,'e','spDef')"><input type="range" min="0" max="4" value="0" step="1" id="e_spDef" oninput="IVManager.onSliderInput('e','spDef')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div><div class="iv-slider-item" id="e_spd_item"><div class="iv-label">⚡速度</div><div class="iv-value-display val-0" id="e_spd_display" onclick="IVManager.startEdit('e','spd')">0</div><input class="iv-value-edit" id="e_spd_edit" value="0" maxlength="2" onblur="IVManager.commitEdit('e','spd')" onkeydown="IVManager.onEditKey(event,'e','spd')"><input type="range" min="0" max="4" value="0" step="1" id="e_spd" oninput="IVManager.onSliderInput('e','spd')"><div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline" onclick="Modal.close('editModal')">取消</button><button class="btn btn-primary" id="btnSaveEdit">💾 保存修改</button></div>
+</div></div>
+
+<!-- STATS MODAL -->
+<div class="modal-overlay" id="statsModal"><div class="modal-box wide">
+  <div class="modal-header"><h3>📊 种公统计</h3><button class="modal-close" onclick="Modal.close('statsModal')">✕</button></div>
+  <div class="modal-body stats-container">
+    <div class="stats-toolbar">
+      <span style="font-weight:600;">视角:</span>
+      <select id="statsViewMode" onchange="StatsModal.render()"><option value="nature-egg">性格 × 蛋组</option><option value="egg-nature">蛋组 × 性格</option></select>
+      <button class="btn btn-outline btn-sm" onclick="StatsModal.exportCSV()">📥 导出 CSV</button>
+      <label class="toggle-switch" onclick="StatsModal.toggleDetail()" style="margin-left:auto;"><span>详细个体值</span><div class="ts-track on" id="statsDetailToggle"><div class="ts-thumb"></div></div></label>
+    </div>
+    <div class="stats-toolbar">
+      <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;">🧬 性格筛选:</div>
+          <div class="stats-matrix" id="statsMatrix"></div>
+        </div>
+        <div style="flex:1;min-width:260px;">
+          <div style="font-weight:600;margin-bottom:4px;">🥚 蛋组筛选 (OR):</div>
+          <div class="stats-egg-tags" id="statsEggTags"></div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="StatsModal.clearFilters()" style="margin-left:auto;">↺ 清空筛选</button>
+    </div>
+
+        <div class="stats-toolbar">
+      <span style="font-size:0.8rem;color:var(--c-text-secondary);" id="statsSummary">雄性: 18 | 性格: 9 | 蛋组: 9 | 性格筛选: 全部 | 蛋组筛选: 全部</span>
+    </div>
+    <div class="stats-grid-wrap" id="statsGridWrap"><table class="stats-table"><thead><tr><th>性格 \ 蛋组</th><th>动物组</th><th>天空组</th><th>妖精组</th><th>巨灵组</th><th>机械组</th><th>植物组</th><th>海洋组</th><th>软体组</th><th>魔力组</th></tr></thead><tbody><tr><th>冷静</th><td><div class="stats-entry"><div class="se-name">小独角兽</div><div class="se-ivs">⚔️9 🪄10 🔯10</div></div></td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">格兰球</div><div class="se-ivs">❤️10 🪄7 ⚡10</div></div></td><td><div class="stats-entry"><div class="se-name">小独角兽</div><div class="se-ivs">⚔️9 🪄10 🔯10</div></div></td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">格兰球</div><div class="se-ivs">❤️10 🪄7 ⚡10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>勇敢</th><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">贝古斯</div><div class="se-ivs">❤️9 🛡️8 🔯9</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>固执</th><td><div class="stats-entry"><div class="se-name">小独角兽</div><div class="se-ivs">⚔️10 🪄8 ⚡9</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">小独角兽</div><div class="se-ivs">⚔️10 🪄8 ⚡9</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>平和</th><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">🪄10 🛡️10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">🪄10 🛡️10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>开朗</th><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">⚔️9 🪄7 🔯10</div></div></td><td><div class="stats-entry"><div class="se-name">魔眷鸟</div><div class="se-ivs">⚔️8 🛡️10 ⚡10</div></div></td><td><div class="stats-entry"><div class="se-name">魔眷鸟</div><div class="se-ivs">⚔️8 🛡️10 ⚡10</div></div><div class="stats-entry"><div class="se-name">拉特</div><div class="se-ivs">❤️10 🔯9 ⚡10</div></div></td><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">⚔️9 🪄7 🔯10</div></div><div class="stats-entry"><div class="se-name">空空颅</div><div class="se-ivs">❤️7 🔯10 ⚡9</div></div></td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">奇丽草</div><div class="se-ivs">❤️10 🪄10 🛡️9</div></div></td><td><div class="stats-entry"><div class="se-name">混乱鱿彩</div><div class="se-ivs">❤️9 ⚔️10 ⚡10</div></div></td><td><div class="stats-entry"><div class="se-name">混乱鱿彩</div><div class="se-ivs">❤️9 ⚔️10 ⚡10</div></div></td><td><div class="stats-entry"><div class="se-name">空空颅</div><div class="se-ivs">❤️7 🔯10 ⚡9</div></div></td></tr><tr><th>沉默</th><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">❤️9 🛡️10 🔯10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">❤️9 🛡️10 🔯10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>聪明</th><td><div class="stats-entry"><div class="se-name">小独角兽</div><div class="se-ivs">❤️10 🪄9 ⚡10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">小独角兽</div><div class="se-ivs">❤️10 🪄9 ⚡10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>胆小</th><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">🛡️9 🔯10 ⚡10</div></div><div class="stats-entry"><div class="se-name">治愈兔</div><div class="se-ivs">🪄9 🛡️10 ⚡10</div></div></td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">治愈兔</div><div class="se-ivs">🪄9 🛡️10 ⚡10</div></div><div class="stats-entry"><div class="se-name">酷拉</div><div class="se-ivs">❤️9 ⚔️10 ⚡10</div></div></td><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">🛡️9 🔯10 ⚡10</div></div></td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">奇丽花</div><div class="se-ivs">❤️10 🪄8 🔯10</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr><tr><th>踏实</th><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">❤️9 🛡️9</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td><div class="stats-entry"><div class="se-name">白金独角兽</div><div class="se-ivs">❤️9 🛡️9</div></div></td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td><td class="stats-empty">-</td></tr></tbody></table></div>
+  </div>
+</div></div>
+
+<!-- BREEDING MODAL -->
+<div class="modal-overlay" id="breedingModal"><div class="modal-box wide">
+  <div class="modal-header"><h3>💕 配种推荐</h3><button class="modal-close" onclick="Modal.close('breedingModal')">✕</button></div>
+  <div class="modal-body"><div class="breeding-layout"><div class="breeding-source" id="breedingSource"></div><div class="breeding-results" id="breedingResults" style=""></div></div></div>
+</div></div>
+
+
+<!-- BOX ORGANIZER SIDEBAR -->
+    <div class="box-sidebar" id="boxSidebar">
+      <div class="box-sidebar-header">
+        <h3>📦 整理精灵盒子</h3>
+        <button class="box-close" onclick="BoxPanel.close()">✕</button>
+      </div>
+      <div class="box-sidebar-body">
+        <div class="box-grid" id="boxGrid"></div>
+      </div>
+      <div class="box-sidebar-footer">
+        <button class="btn btn-primary" id="btnMoveBox" disabled="" onclick="BoxPanel.moveSelected()">📥 移动</button>
+        <button class="btn btn-outline" id="btnUndoBox" disabled="" onclick="BoxPanel.undo()">↩ 撤销</button>
+      </div>
+    </div>
+  </div><!-- /app-layout -->
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ===== CONSTANTS ===== */
+var STORAGE_KEY = 'rocom_sprites_v4';
+var IV_MAP = [0, 7, 8, 9, 10];
+var IV_REVERSE = {0:0, 7:1, 8:2, 9:3, 10:4};
+var STAT_EMOJI = { hp:'❤️', atk:'⚔️', spAtk:'🪄', def:'🛡️', spDef:'🔯', spd:'⚡' };
+var STAT_NAMES = { hp:'生命', atk:'物攻', spAtk:'魔攻', def:'物防', spDef:'魔防', spd:'速度' };
+var STAT_KEYS = ['hp','atk','spAtk','def','spDef','spd'];
+var ROW_HEADERS = ['生命','物攻','魔攻','物防','魔防','速度'];
+var COL_HEADERS = ['生命','物攻','魔攻','物防','魔防','速度'];
+
+var NATURE_EFFECTS = {
+  '沉默':{sub:'atk',add:'hp'},'平和':{sub:'spAtk',add:'hp'},'忧郁':{sub:'def',add:'hp'},'粗心':{sub:'spDef',add:'hp'},'踏实':{sub:'spd',add:'hp'},
+  '逞强':{sub:'hp',add:'atk'},'固执':{sub:'spAtk',add:'atk'},'大胆':{sub:'def',add:'atk'},'调皮':{sub:'spDef',add:'atk'},'勇敢':{sub:'spd',add:'atk'},
+  '理性':{sub:'hp',add:'spAtk'},'聪明':{sub:'atk',add:'spAtk'},'专注':{sub:'def',add:'spAtk'},'偏执':{sub:'spDef',add:'spAtk'},'冷静':{sub:'spd',add:'spAtk'},
+  '坦率':{sub:'hp',add:'def'},'稳重':{sub:'atk',add:'def'},'天真':{sub:'spAtk',add:'def'},'懒散':{sub:'spDef',add:'def'},'悠闲':{sub:'spd',add:'def'},
+  '焦虑':{sub:'hp',add:'spDef'},'警惕':{sub:'atk',add:'spDef'},'害羞':{sub:'spAtk',add:'spDef'},'温顺':{sub:'def',add:'spDef'},'慎重':{sub:'spd',add:'spDef'},
+  '热情':{sub:'hp',add:'spd'},'胆小':{sub:'atk',add:'spd'},'开朗':{sub:'spAtk',add:'spd'},'急躁':{sub:'def',add:'spd'},'莽撞':{sub:'spDef',add:'spd'}
+};
+var NATURE_MATRIX = [
+  [null,'逞强','理性','坦率','焦虑','热情'],['沉默',null,'聪明','稳重','警惕','胆小'],
+  ['平和','固执',null,'天真','害羞','开朗'],['忧郁','大胆','专注',null,'温顺','急躁'],
+  ['粗心','调皮','偏执','懒散',null,'莽撞'],['踏实','勇敢','冷静','悠闲','慎重',null]
+];
+var SPECIALTIES = ['无','爱分享','家里蹲','热心教','慈悲为怀','灵巧','疾行','同乘','无畏','奇袭','亲密'];
+var MEDALS = ['大块头','小不点','婉转声','粗嗓门','其他','无','炫彩','异色'];
+var EGG_GROUPS = ['无法孵蛋','动物组','拟人组','巨灵组','魔力组','天空组','两栖组','植物组','大地组','妖精组','昆虫组','软体组','海洋组','机械组','龙组'];
+
+// EGG_GROUP_MAP and NAME_LIST will be injected by build script
+var SPRITE_DATA = {"喵喵":{"eggGroups":["动物组","拟人组"],"attribute":"草","bloodline":""},"水蓝蓝":{"eggGroups":["魔力组"],"attribute":"水","bloodline":""},"火花":{"eggGroups":["巨灵组","魔力组"],"attribute":"火","bloodline":""},"迪莫":{"eggGroups":["无法孵蛋"],"attribute":"光","bloodline":""},"水灵":{"eggGroups":["魔力组"],"attribute":"水","bloodline":""},"火神":{"eggGroups":["巨灵组","魔力组"],"attribute":"火","bloodline":""},"魔力猫":{"eggGroups":["动物组","拟人组"],"attribute":"草","bloodline":""},"草头鸭":{"eggGroups":["两栖组","天空组"],"attribute":"草","bloodline":""},"恶魔叮":{"eggGroups":["妖精组"],"attribute":"翼/恶","bloodline":""},"恶魔狼":{"eggGroups":["动物组"],"attribute":"恶","bloodline":""},"鸭吉吉":{"eggGroups":["天空组"],"attribute":"普通","bloodline":""},"铠甲虫":{"eggGroups":["昆虫组","天空组"],"attribute":"虫","bloodline":""},"阿米亚特":{"eggGroups":["巨灵组","大地组"],"attribute":"地","bloodline":""},"阿米樱":{"eggGroups":["巨灵组","大地组"],"attribute":"地","bloodline":""},"罗隐":{"eggGroups":["巨灵组","大地组"],"attribute":"地/恶","bloodline":""},"蹦蹦种子":{"eggGroups":["植物组"],"attribute":"草/毒","bloodline":""},"蹦蹦草":{"eggGroups":["植物组"],"attribute":"草/毒","bloodline":""},"蹦蹦花":{"eggGroups":["植物组"],"attribute":"草/毒","bloodline":""},"地鼠":{"eggGroups":["动物组"],"attribute":"地","bloodline":""},"遁鼠":{"eggGroups":["动物组"],"attribute":"地","bloodline":""},"遁地鼠":{"eggGroups":["动物组"],"attribute":"地","bloodline":""},"喵呜":{"eggGroups":["动物组","拟人组"],"attribute":"草","bloodline":""},"绿草精灵":{"eggGroups":["妖精组","拟人组"],"attribute":"草/幻","bloodline":""},"蒲公英娃娃":{"eggGroups":["天空组","植物组"],"attribute":"草/萌","bloodline":""},"冬羽雀":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"奇丽草":{"eggGroups":["植物组"],"attribute":"草","bloodline":""},"奇丽叶":{"eggGroups":["植物组"],"attribute":"草","bloodline":""},"奇丽花":{"eggGroups":["植物组"],"attribute":"草","bloodline":""},"焰火":{"eggGroups":["巨灵组","魔力组"],"attribute":"火","bloodline":""},"波波拉":{"eggGroups":["魔力组"],"attribute":"水","bloodline":""},"蒲公英":{"eggGroups":["天空组","植物组"],"attribute":"草/萌","bloodline":""},"魔草巫灵":{"eggGroups":["妖精组","拟人组"],"attribute":"草/幻","bloodline":""},"岚鸟":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"小甲虫":{"eggGroups":["昆虫组","天空组"],"attribute":"虫","bloodline":""},"叮叮恶魔":{"eggGroups":["妖精组"],"attribute":"翼/恶","bloodline":""},"丢丢":{"eggGroups":["两栖组"],"attribute":"草/火","bloodline":""},"卡卡虫":{"eggGroups":["两栖组"],"attribute":"草/火","bloodline":""},"卡瓦重":{"eggGroups":["两栖组"],"attribute":"草/火","bloodline":""},"伊贝儿":{"eggGroups":["植物组","软体组"],"attribute":"草","bloodline":""},"伊贝粉粉":{"eggGroups":["植物组","软体组"],"attribute":"草","bloodline":""},"锥尾羊":{"eggGroups":["动物组"],"attribute":"幽","bloodline":""},"铃兰羊":{"eggGroups":["动物组"],"attribute":"幽","bloodline":""},"花影羚羊":{"eggGroups":["动物组"],"attribute":"幽/恶","bloodline":""},"白发懒人":{"eggGroups":["巨灵组","拟人组"],"attribute":"普通","bloodline":""},"记忆石":{"eggGroups":["大地组"],"attribute":"地","bloodline":""},"板板壳":{"eggGroups":["两栖组"],"attribute":"水","bloodline":""},"咔咔壳":{"eggGroups":["两栖组"],"attribute":"水","bloodline":""},"水泡壳":{"eggGroups":["两栖组"],"attribute":"水","bloodline":""},"一窝蜂":{"eggGroups":["昆虫组","天空组"],"attribute":"虫/翼","bloodline":""},"黄蜂后":{"eggGroups":["昆虫组","天空组"],"attribute":"虫/翼","bloodline":""},"小灵面":{"eggGroups":["魔力组"],"attribute":"幽","bloodline":""},"暗影灵面":{"eggGroups":["魔力组"],"attribute":"幽","bloodline":""},"小独角兽":{"eggGroups":["巨灵组","动物组"],"attribute":"光","bloodline":""},"白金独角兽":{"eggGroups":["巨灵组","动物组"],"attribute":"光","bloodline":""},"幽影树":{"eggGroups":["妖精组","植物组"],"attribute":"草/幽","bloodline":""},"忽幽狸":{"eggGroups":["动物组","拟人组"],"attribute":"毒/幽","bloodline":""},"影狸":{"eggGroups":["动物组","拟人组"],"attribute":"毒/幽","bloodline":""},"卷毛鸭":{"eggGroups":["两栖组","天空组"],"attribute":"草/武","bloodline":""},"锤头鹳":{"eggGroups":["两栖组","天空组"],"attribute":"水/翼","bloodline":""},"护主犬":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"音速犬":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"格兰种子":{"eggGroups":["妖精组","植物组"],"attribute":"草","bloodline":""},"格兰花":{"eggGroups":["妖精组","植物组"],"attribute":"草","bloodline":""},"格兰球":{"eggGroups":["妖精组","植物组"],"attribute":"草","bloodline":""},"灵狐":{"eggGroups":["动物组"],"attribute":"火/冰","bloodline":""},"九尾狐":{"eggGroups":["动物组"],"attribute":"火/冰","bloodline":""},"尖嘴狐仙":{"eggGroups":["动物组"],"attribute":"火/冰","bloodline":""},"烈钻鸟":{"eggGroups":["巨灵组","天空组"],"attribute":"火/翼","bloodline":""},"长尾火鸟":{"eggGroups":["巨灵组","天空组"],"attribute":"火/翼","bloodline":""},"火羽":{"eggGroups":["巨灵组","天空组"],"attribute":"火/翼","bloodline":""},"治愈兔":{"eggGroups":["动物组","妖精组"],"attribute":"火/萌","bloodline":""},"红丝绒":{"eggGroups":["动物组","妖精组"],"attribute":"火/萌","bloodline":""},"可爱猿":{"eggGroups":["巨灵组","拟人组"],"attribute":"火","bloodline":""},"炽热猿":{"eggGroups":["巨灵组","拟人组"],"attribute":"火","bloodline":""},"火焰猿":{"eggGroups":["巨灵组","拟人组"],"attribute":"火","bloodline":""},"可立鸡":{"eggGroups":["天空组","拟人组"],"attribute":"火","bloodline":""},"晕晕鸡":{"eggGroups":["天空组","拟人组"],"attribute":"火","bloodline":""},"绅士鸡":{"eggGroups":["天空组","拟人组"],"attribute":"火/武","bloodline":""},"武者鸡":{"eggGroups":["天空组","拟人组"],"attribute":"火/武","bloodline":""},"火尾瓦特":{"eggGroups":["巨灵组"],"attribute":"火","bloodline":""},"火尾战士":{"eggGroups":["巨灵组"],"attribute":"火","bloodline":""},"烈火守护":{"eggGroups":["巨灵组"],"attribute":"火","bloodline":""},"呆小路":{"eggGroups":["动物组","拟人组"],"attribute":"草/萌","bloodline":""},"舞动路路":{"eggGroups":["动物组","拟人组"],"attribute":"草/萌","bloodline":""},"白发路路":{"eggGroups":["动物组","拟人组"],"attribute":"草/萌","bloodline":""},"绿耳松鼠":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"抱枕松鼠":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"蹦床松鼠":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"动力猿":{"eggGroups":["巨灵组","拟人组"],"attribute":"普通/武","bloodline":""},"瞌睡王":{"eggGroups":["巨灵组","拟人组"],"attribute":"普通/武","bloodline":""},"布是石":{"eggGroups":["巨灵组","大地组"],"attribute":"地","bloodline":""},"布是岩":{"eggGroups":["巨灵组","大地组"],"attribute":"地","bloodline":""},"布克棱岩":{"eggGroups":["巨灵组","大地组"],"attribute":"地","bloodline":""},"石肤蜥":{"eggGroups":["两栖组","大地组"],"attribute":"地","bloodline":""},"石刺蜥":{"eggGroups":["两栖组","大地组"],"attribute":"地","bloodline":""},"石冠王蜥":{"eggGroups":["两栖组","大地组"],"attribute":"地","bloodline":""},"仪使者":{"eggGroups":["妖精组","大地组"],"attribute":"地/幻","bloodline":""},"仪式之星":{"eggGroups":["妖精组","大地组"],"attribute":"地/幻","bloodline":""},"仪式巨像":{"eggGroups":["妖精组","大地组"],"attribute":"地/幻","bloodline":""},"甜田螺":{"eggGroups":["妖精组","软体组"],"attribute":"水/萌","bloodline":""},"壳乙螺":{"eggGroups":["妖精组","软体组"],"attribute":"水/萌","bloodline":""},"卡洛儿":{"eggGroups":["妖精组","软体组"],"attribute":"水/萌","bloodline":""},"风铃鲨":{"eggGroups":["天空组","海洋组"],"attribute":"水/翼","bloodline":""},"蓝蝶鲨":{"eggGroups":["天空组","海洋组"],"attribute":"水/翼","bloodline":""},"彩蝶鲨":{"eggGroups":["天空组","海洋组"],"attribute":"水/翼","bloodline":""},"果冻":{"eggGroups":["魔力组","海洋组"],"attribute":"水","bloodline":""},"翡翠水母":{"eggGroups":["软体组","海洋组"],"attribute":"水/毒","bloodline":""},"琉璃水母":{"eggGroups":["软体组","海洋组"],"attribute":"水/毒","bloodline":""},"大耳帽兜":{"eggGroups":["妖精组","拟人组"],"attribute":"冰/萌","bloodline":""},"帽兜娃娃":{"eggGroups":["妖精组","拟人组"],"attribute":"冰/萌","bloodline":""},"雪影娃娃":{"eggGroups":["妖精组","拟人组"],"attribute":"冰/萌","bloodline":""},"脆筒甜甜":{"eggGroups":["软体组","魔力组"],"attribute":"冰","bloodline":""},"香草甜甜":{"eggGroups":["软体组","魔力组"],"attribute":"冰","bloodline":""},"圣代甜甜":{"eggGroups":["软体组","魔力组"],"attribute":"冰","bloodline":""},"小狮鹫":{"eggGroups":["天空组","动物组"],"attribute":"翼","bloodline":""},"神圣狮鹫":{"eggGroups":["天空组","动物组"],"attribute":"翼","bloodline":""},"皇家狮鹫":{"eggGroups":["天空组","动物组"],"attribute":"翼","bloodline":""},"圆眼蜘蛛":{"eggGroups":["昆虫组"],"attribute":"虫","bloodline":""},"尖角蜘蛛":{"eggGroups":["昆虫组"],"attribute":"毒/虫","bloodline":""},"芋香巨角蛛":{"eggGroups":["昆虫组"],"attribute":"毒/虫","bloodline":""},"毛毛":{"eggGroups":["昆虫组","软体组"],"attribute":"虫/萌","bloodline":""},"爬爬":{"eggGroups":["昆虫组","软体组"],"attribute":"虫/萌","bloodline":""},"化蝶":{"eggGroups":["昆虫组","软体组"],"attribute":"虫/萌","bloodline":""},"小草虫":{"eggGroups":["昆虫组","拟人组"],"attribute":"草/虫","bloodline":""},"草衣虫":{"eggGroups":["昆虫组","拟人组"],"attribute":"草/虫","bloodline":""},"花衣蝶":{"eggGroups":["昆虫组","拟人组"],"attribute":"草/虫","bloodline":""},"小夜":{"eggGroups":["妖精组","拟人组"],"attribute":"恶","bloodline":""},"紫夜":{"eggGroups":["妖精组","拟人组"],"attribute":"恶","bloodline":""},"朔夜伊芙":{"eggGroups":["妖精组","拟人组"],"attribute":"恶","bloodline":""},"小灵菇":{"eggGroups":["植物组","魔力组"],"attribute":"幽","bloodline":""},"幻灵菇":{"eggGroups":["植物组","魔力组"],"attribute":"草/幽","bloodline":""},"幻影灵菇":{"eggGroups":["植物组","魔力组"],"attribute":"草/幽","bloodline":""},"空空颅":{"eggGroups":["巨灵组","魔力组"],"attribute":"幽","bloodline":""},"夜宿颅":{"eggGroups":["巨灵组","魔力组"],"attribute":"幽","bloodline":""},"夜枭":{"eggGroups":["巨灵组","魔力组"],"attribute":"幽","bloodline":""},"多多":{"eggGroups":["拟人组"],"attribute":"地/毒","bloodline":""},"多啦多":{"eggGroups":["拟人组"],"attribute":"地/毒","bloodline":""},"古啦多":{"eggGroups":["拟人组"],"attribute":"地/毒","bloodline":""},"裘洛":{"eggGroups":["动物组","妖精组"],"attribute":"毒","bloodline":""},"裘力":{"eggGroups":["动物组","妖精组"],"attribute":"毒","bloodline":""},"裘卡":{"eggGroups":["动物组","妖精组"],"attribute":"毒","bloodline":""},"花魁蜂后":{"eggGroups":["昆虫组","天空组"],"attribute":"虫/翼","bloodline":""},"春团":{"eggGroups":["动物组","妖精组"],"attribute":"草","bloodline":""},"春兔":{"eggGroups":["动物组","妖精组"],"attribute":"草","bloodline":""},"伏地兽":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"贪食鼹":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"巨噬针鼹":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"阿布":{"eggGroups":["无法孵蛋"],"attribute":"普通","bloodline":""},"超能阿布":{"eggGroups":["无法孵蛋"],"attribute":"龙","bloodline":""},"石石":{"eggGroups":["大地组","魔力组"],"attribute":"地","bloodline":""},"巨灵石":{"eggGroups":["大地组","魔力组"],"attribute":"地/幽","bloodline":""},"雪豆丁":{"eggGroups":["巨灵组","拟人组"],"attribute":"冰","bloodline":""},"雪蛮人":{"eggGroups":["巨灵组","拟人组"],"attribute":"冰","bloodline":""},"雪巨人":{"eggGroups":["巨灵组","拟人组"],"attribute":"冰","bloodline":""},"咔咔羽毛":{"eggGroups":["天空组"],"attribute":"普通/翼","bloodline":""},"咔咔雀":{"eggGroups":["天空组"],"attribute":"普通/翼","bloodline":""},"咔咔鸟":{"eggGroups":["天空组"],"attribute":"普通/翼","bloodline":""},"矮脚爬爬":{"eggGroups":["巨灵组","昆虫组"],"attribute":"虫","bloodline":""},"恶魔红钻":{"eggGroups":["巨灵组","昆虫组"],"attribute":"虫/恶","bloodline":""},"小帕尔":{"eggGroups":["无法孵蛋"],"attribute":"恶","bloodline":""},"帕尔萨斯":{"eggGroups":["无法孵蛋"],"attribute":"恶","bloodline":""},"龙息帕尔":{"eggGroups":["无法孵蛋"],"attribute":"恶","bloodline":""},"瑰眼仔":{"eggGroups":["巨灵组","昆虫组"],"attribute":"虫/恶","bloodline":""},"耳翎瑰魅":{"eggGroups":["巨灵组","昆虫组"],"attribute":"虫/恶","bloodline":""},"邪眼巨魔":{"eggGroups":["巨灵组","昆虫组"],"attribute":"虫/恶","bloodline":""},"拉特":{"eggGroups":["妖精组"],"attribute":"电","bloodline":""},"酷拉":{"eggGroups":["妖精组"],"attribute":"电","bloodline":""},"电咩咩":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"粉咩咩":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"电球咩咩":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"小星光":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"星光狮":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"闪电环":{"eggGroups":["魔力组"],"attribute":"电","bloodline":""},"刺电环":{"eggGroups":["魔力组"],"attribute":"电","bloodline":""},"荆棘电环":{"eggGroups":["魔力组"],"attribute":"电","bloodline":""},"粉粉星":{"eggGroups":["妖精组","软体组"],"attribute":"电/幻","bloodline":""},"小皮球":{"eggGroups":["妖精组","软体组"],"attribute":"电/幻","bloodline":""},"机械方方":{"eggGroups":["拟人组","机械组"],"attribute":"机械","bloodline":""},"多彩方方":{"eggGroups":["拟人组","机械组"],"attribute":"机械","bloodline":""},"立方人":{"eggGroups":["拟人组","机械组"],"attribute":"机械","bloodline":""},"贝瑟":{"eggGroups":["机械组"],"attribute":"火/机械","bloodline":""},"贝加尔":{"eggGroups":["机械组"],"attribute":"火/机械","bloodline":""},"贝古斯":{"eggGroups":["机械组"],"attribute":"火/机械","bloodline":""},"多西":{"eggGroups":["巨灵组","机械组"],"attribute":"地/机械","bloodline":""},"库多西":{"eggGroups":["巨灵组","机械组"],"attribute":"地/机械","bloodline":""},"波多西":{"eggGroups":["巨灵组","机械组"],"attribute":"地/机械","bloodline":""},"小翼龙":{"eggGroups":["天空组","龙组"],"attribute":"龙/翼","bloodline":""},"翼龙":{"eggGroups":["天空组","龙组"],"attribute":"龙/翼","bloodline":""},"伊雷龙":{"eggGroups":["龙组"],"attribute":"龙","bloodline":""},"海豹战士":{"eggGroups":["两栖组","动物组"],"attribute":"水/武","bloodline":""},"海豹船长":{"eggGroups":["两栖组","动物组"],"attribute":"水/武","bloodline":""},"呼拉猫":{"eggGroups":["拟人组"],"attribute":"武","bloodline":""},"增肌猫":{"eggGroups":["拟人组"],"attribute":"武","bloodline":""},"健猫教练":{"eggGroups":["拟人组"],"attribute":"武","bloodline":""},"古钟蛇":{"eggGroups":["两栖组","动物组"],"attribute":"毒/萌","bloodline":""},"寒音蛇":{"eggGroups":["两栖组","动物组"],"attribute":"毒/萌","bloodline":""},"菊花梨":{"eggGroups":["植物组"],"attribute":"萌","bloodline":""},"牵线木偶":{"eggGroups":["妖精组","拟人组"],"attribute":"幻","bloodline":""},"帅帅魔偶":{"eggGroups":["妖精组","拟人组"],"attribute":"幻","bloodline":""},"小怂猫":{"eggGroups":["动物组","拟人组"],"attribute":"武","bloodline":""},"怒目怂猫":{"eggGroups":["动物组","拟人组"],"attribute":"武","bloodline":""},"哭哭菇":{"eggGroups":["植物组"],"attribute":"幻","bloodline":""},"怖须菇":{"eggGroups":["植物组"],"attribute":"幻","bloodline":""},"怖哭菇":{"eggGroups":["植物组"],"attribute":"幻","bloodline":""},"绒绒":{"eggGroups":["无法孵蛋"],"attribute":"光/虫","bloodline":""},"小绒茧":{"eggGroups":["无法孵蛋"],"attribute":"光/虫","bloodline":""},"绒仙子":{"eggGroups":["无法孵蛋"],"attribute":"光/虫","bloodline":""},"小鹬":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"鄙目鹬":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"高脚鹬":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"奔波鼠":{"eggGroups":["动物组","拟人组"],"attribute":"地","bloodline":""},"流浪鼠":{"eggGroups":["动物组","拟人组"],"attribute":"地","bloodline":""},"布鲁斯":{"eggGroups":["软体组","海洋组"],"attribute":"冰","bloodline":""},"雪顶布鲁斯":{"eggGroups":["软体组","海洋组"],"attribute":"冰","bloodline":""},"冰钻布鲁斯":{"eggGroups":["软体组","海洋组"],"attribute":"冰","bloodline":""},"呼呼猪":{"eggGroups":["动物组"],"attribute":"地/冰","bloodline":""},"獠牙猪":{"eggGroups":["动物组"],"attribute":"地/冰","bloodline":""},"卡波":{"eggGroups":["妖精组"],"attribute":"恶","bloodline":""},"卡拉波斯":{"eggGroups":["妖精组"],"attribute":"恶","bloodline":""},"胆小鳗鱼":{"eggGroups":["海洋组"],"attribute":"水/电","bloodline":""},"闪电鳗鱼":{"eggGroups":["海洋组"],"attribute":"水/电","bloodline":""},"大头骨龙":{"eggGroups":["巨灵组","龙组"],"attribute":"龙/幽","bloodline":""},"寂灭骨龙":{"eggGroups":["巨灵组","龙组"],"attribute":"龙/幽","bloodline":""},"绿翼鸟":{"eggGroups":["天空组","妖精组"],"attribute":"翼/萌","bloodline":""},"魔翼鸟":{"eggGroups":["天空组","妖精组"],"attribute":"翼/萌","bloodline":""},"魔眷鸟":{"eggGroups":["天空组","妖精组"],"attribute":"翼/萌","bloodline":""},"雪绒鸟":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"矿晶虫":{"eggGroups":["软体组","大地组"],"attribute":"光/地","bloodline":""},"晶石蜗":{"eggGroups":["软体组","大地组"],"attribute":"光/地","bloodline":""},"犀角鸟":{"eggGroups":["无法孵蛋"],"attribute":"光","bloodline":""},"光纤兽":{"eggGroups":["无法孵蛋"],"attribute":"光","bloodline":""},"疾光千兽":{"eggGroups":["无法孵蛋"],"attribute":"光","bloodline":""},"小鼠獭":{"eggGroups":["两栖组","动物组"],"attribute":"普通/水","bloodline":""},"燕尾獭":{"eggGroups":["两栖组","动物组"],"attribute":"普通/水","bloodline":""},"卷胡巨獭":{"eggGroups":["两栖组","动物组"],"attribute":"普通/水","bloodline":""},"粉星仔":{"eggGroups":["天空组","妖精组"],"attribute":"幻","bloodline":""},"粉耳星兔":{"eggGroups":["天空组","妖精组"],"attribute":"幻","bloodline":""},"海盔虫":{"eggGroups":["巨灵组","海洋组"],"attribute":"水/毒","bloodline":""},"刺盔虫":{"eggGroups":["巨灵组","海洋组"],"attribute":"水/毒","bloodline":""},"千棘盔":{"eggGroups":["巨灵组","海洋组"],"attribute":"水/毒","bloodline":""},"雪娃娃":{"eggGroups":["妖精组"],"attribute":"冰","bloodline":""},"冰封怨灵":{"eggGroups":["妖精组"],"attribute":"冰","bloodline":""},"雪灵":{"eggGroups":["妖精组"],"attribute":"冰","bloodline":""},"乖乖鹄":{"eggGroups":["两栖组","天空组"],"attribute":"水/翼","bloodline":""},"蓝珠天鹅":{"eggGroups":["两栖组","天空组"],"attribute":"水/翼","bloodline":""},"翠顶夫人":{"eggGroups":["两栖组","天空组"],"attribute":"水/翼","bloodline":""},"红绒十字":{"eggGroups":["动物组","妖精组"],"attribute":"火/萌","bloodline":""},"电动长颈鹿":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"奔乐鹿":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"爵士鹿":{"eggGroups":["动物组"],"attribute":"电","bloodline":""},"嘟嘟煲":{"eggGroups":["妖精组","大地组"],"attribute":"毒","bloodline":""},"嘟嘟锅":{"eggGroups":["妖精组","大地组"],"attribute":"毒","bloodline":""},"幽星光":{"eggGroups":["巨灵组","妖精组"],"attribute":"幻","bloodline":""},"曜星光":{"eggGroups":["巨灵组","妖精组"],"attribute":"翼/幻","bloodline":""},"暮星辰":{"eggGroups":["巨灵组","妖精组"],"attribute":"翼/幻","bloodline":""},"春花兔":{"eggGroups":["动物组","妖精组"],"attribute":"草","bloodline":""},"逗逗":{"eggGroups":["巨灵组","动物组"],"attribute":"萌","bloodline":""},"气球猫":{"eggGroups":["巨灵组","动物组"],"attribute":"萌","bloodline":""},"梦想三三":{"eggGroups":["巨灵组","动物组"],"attribute":"萌","bloodline":""},"旋叶虫":{"eggGroups":["昆虫组","植物组"],"attribute":"普通/虫","bloodline":""},"风滚暮虫":{"eggGroups":["昆虫组","植物组"],"attribute":"普通/虫","bloodline":""},"菇菇丁":{"eggGroups":["植物组"],"attribute":"草/地","bloodline":""},"多菇丁":{"eggGroups":["植物组"],"attribute":"草/地","bloodline":""},"九幽菇":{"eggGroups":["植物组"],"attribute":"草/地","bloodline":""},"深蓝鲸":{"eggGroups":["巨灵组","海洋组"],"attribute":"水","bloodline":""},"双灯鱼":{"eggGroups":["海洋组"],"attribute":"水/电","bloodline":""},"利灯鱼":{"eggGroups":["海洋组"],"attribute":"水/电","bloodline":""},"豆丁鱼":{"eggGroups":["海洋组","龙组"],"attribute":"水/龙","bloodline":""},"快鳍鱼":{"eggGroups":["海洋组","龙组"],"attribute":"水/龙","bloodline":""},"龙鱼":{"eggGroups":["海洋组","龙组"],"attribute":"水/龙","bloodline":""},"凡雀":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""},"紫翎鹰":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""},"凡鹰":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""},"里奥":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""},"灵羽勇士":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""},"圣羽翼王":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""},"星尘虫":{"eggGroups":["昆虫组"],"attribute":"虫","bloodline":""},"落星虫":{"eggGroups":["昆虫组"],"attribute":"虫","bloodline":""},"陨星虫":{"eggGroups":["昆虫组"],"attribute":"虫","bloodline":""},"幽冥眼":{"eggGroups":["魔力组"],"attribute":"幽","bloodline":""},"缇塔":{"eggGroups":["机械组"],"attribute":"机械","bloodline":""},"声波缇塔":{"eggGroups":["机械组"],"attribute":"机械","bloodline":""},"齿轮小子":{"eggGroups":["机械组"],"attribute":"机械","bloodline":""},"机甲小子":{"eggGroups":["机械组"],"attribute":"机械","bloodline":""},"权杖-Ⅱ":{"eggGroups":["机械组"],"attribute":"机械","bloodline":""},"权杖-V":{"eggGroups":["机械组"],"attribute":"机械","bloodline":""},"伊兰亚龙":{"eggGroups":["龙组"],"attribute":"龙","bloodline":""},"格斗小五":{"eggGroups":["拟人组"],"attribute":"武","bloodline":""},"格斗小六":{"eggGroups":["拟人组"],"attribute":"武","bloodline":""},"格斗小八":{"eggGroups":["拟人组"],"attribute":"武","bloodline":""},"厉毒小萝":{"eggGroups":["天空组","拟人组"],"attribute":"毒/恶","bloodline":""},"厉毒修萝":{"eggGroups":["天空组","拟人组"],"attribute":"毒/恶","bloodline":""},"海枝枝":{"eggGroups":["植物组","海洋组"],"attribute":"水/幽","bloodline":""},"小电企鹅":{"eggGroups":["天空组"],"attribute":"冰/电","bloodline":""},"电企鹅":{"eggGroups":["天空组"],"attribute":"冰/电","bloodline":""},"柴渣虫":{"eggGroups":["昆虫组","植物组"],"attribute":"草/火","bloodline":""},"燃薪虫":{"eggGroups":["昆虫组","植物组"],"attribute":"草/火","bloodline":""},"梦游":{"eggGroups":["妖精组","魔力组"],"attribute":"光/幽","bloodline":""},"梦悠悠":{"eggGroups":["妖精组","魔力组"],"attribute":"光/幽","bloodline":""},"噼啪鸟":{"eggGroups":["巨灵组","天空组"],"attribute":"电/翼","bloodline":""},"月牙雪熊":{"eggGroups":["巨灵组","动物组"],"attribute":"冰/幻","bloodline":""},"星云旅者":{"eggGroups":["动物组","魔力组"],"attribute":"翼/幻","bloodline":""},"布瓜蝌":{"eggGroups":["两栖组"],"attribute":"幻","bloodline":""},"上岸蛙":{"eggGroups":["两栖组"],"attribute":"幻","bloodline":""},"蓬叶虫":{"eggGroups":["昆虫组","植物组"],"attribute":"普通/虫","bloodline":""},"螺旋帕帕":{"eggGroups":["天空组","机械组"],"attribute":"翼/机械","bloodline":""},"落陨星兔":{"eggGroups":["天空组","妖精组"],"attribute":"幻","bloodline":""},"小丑豆豆":{"eggGroups":["妖精组","拟人组"],"attribute":"恶","bloodline":""},"小丑兔":{"eggGroups":["妖精组","拟人组"],"attribute":"恶","bloodline":""},"小丑公爵":{"eggGroups":["妖精组","拟人组"],"attribute":"恶","bloodline":""},"吸泥鸥":{"eggGroups":["两栖组","天空组"],"attribute":"地/翼","bloodline":""},"泥吼牙":{"eggGroups":["两栖组","天空组"],"attribute":"地/翼","bloodline":""},"兽花蕾":{"eggGroups":["植物组"],"attribute":"草/光","bloodline":""},"公平鸽":{"eggGroups":["天空组"],"attribute":"普通","bloodline":""},"花怨鳗":{"eggGroups":["两栖组","海洋组"],"attribute":"草/地","bloodline":""},"鳗尾兽":{"eggGroups":["两栖组","海洋组"],"attribute":"草/地","bloodline":""},"波波螺":{"eggGroups":["两栖组","大地组"],"attribute":"水/地","bloodline":""},"消波螺":{"eggGroups":["两栖组","大地组"],"attribute":"水/地","bloodline":""},"嗜波螺":{"eggGroups":["两栖组","大地组"],"attribute":"水/地","bloodline":""},"里拉鳐":{"eggGroups":["妖精组","海洋组"],"attribute":"水","bloodline":""},"抹茶布丁":{"eggGroups":["魔力组","海洋组"],"attribute":"草/水","bloodline":""},"椰浆布丁":{"eggGroups":["海洋组"],"attribute":"水/冰","bloodline":""},"熔岩布丁":{"eggGroups":["海洋组"],"attribute":"火/水","bloodline":""},"号儿鱼":{"eggGroups":["妖精组","海洋组"],"attribute":"水","bloodline":""},"圆号鱼":{"eggGroups":["妖精组","海洋组"],"attribute":"水","bloodline":""},"小雪人":{"eggGroups":["无法孵蛋"],"attribute":"冰","bloodline":""},"雪怪":{"eggGroups":["无法孵蛋"],"attribute":"冰","bloodline":""},"斑斑":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"斑枭":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"乌达":{"eggGroups":["巨灵组"],"attribute":"火/恶","bloodline":""},"迷你乌":{"eggGroups":["巨灵组"],"attribute":"火/恶","bloodline":""},"乌拉塔":{"eggGroups":["巨灵组"],"attribute":"火/恶","bloodline":""},"多灵":{"eggGroups":["天空组","拟人组"],"attribute":"幽","bloodline":""},"多灵主":{"eggGroups":["天空组","拟人组"],"attribute":"幽","bloodline":""},"圣剑侍从":{"eggGroups":["巨灵组","机械组"],"attribute":"机械","bloodline":""},"圣剑-X":{"eggGroups":["巨灵组","机械组"],"attribute":"机械","bloodline":""},"帕帕斯卡":{"eggGroups":["天空组","机械组"],"attribute":"翼/机械","bloodline":""},"棋棋":{"eggGroups":["妖精组"],"attribute":"地/武","bloodline":""},"棋骑士":{"eggGroups":["妖精组"],"attribute":"地/武","bloodline":""},"棋绮后":{"eggGroups":["妖精组"],"attribute":"地/武","bloodline":""},"棋齐垒":{"eggGroups":["妖精组"],"attribute":"地/武","bloodline":""},"棋祈督":{"eggGroups":["妖精组"],"attribute":"地/武","bloodline":""},"栗鼠":{"eggGroups":["动物组","软体组"],"attribute":"毒","bloodline":""},"壳栗丝鼠":{"eggGroups":["动物组","软体组"],"attribute":"毒","bloodline":""},"小黑猫":{"eggGroups":["动物组","妖精组"],"attribute":"普通","bloodline":""},"黑猫巫师":{"eggGroups":["动物组","妖精组"],"attribute":"普通","bloodline":""},"黑羽夫人":{"eggGroups":["两栖组","天空组"],"attribute":"翼/恶","bloodline":""},"爆焰仔":{"eggGroups":["无法孵蛋"],"attribute":"火/龙","bloodline":""},"爆焰喷喷":{"eggGroups":["无法孵蛋"],"attribute":"火/龙","bloodline":""},"墨鱿士":{"eggGroups":["软体组","海洋组"],"attribute":"幽","bloodline":""},"混乱鱿彩":{"eggGroups":["软体组","海洋组"],"attribute":"幽/恶","bloodline":""},"秩序鱿墨":{"eggGroups":["软体组","海洋组"],"attribute":"萌/幽","bloodline":""},"刺轮砣":{"eggGroups":["海洋组"],"attribute":"毒/萌","bloodline":""},"月亮砣":{"eggGroups":["海洋组"],"attribute":"毒/萌","bloodline":""},"松仔":{"eggGroups":["动物组"],"attribute":"草/武","bloodline":""},"松叶羊":{"eggGroups":["动物组"],"attribute":"草/武","bloodline":""},"针叶巡林":{"eggGroups":["动物组"],"attribute":"草/武","bloodline":""},"水滴蛇":{"eggGroups":["两栖组","妖精组"],"attribute":"水/武","bloodline":""},"水蛇锁":{"eggGroups":["两栖组","妖精组"],"attribute":"水/武","bloodline":""},"游蛇魔使":{"eggGroups":["两栖组","妖精组"],"attribute":"水/武","bloodline":""},"小勇狮":{"eggGroups":["动物组"],"attribute":"火/武","bloodline":""},"炽焰狮":{"eggGroups":["动物组"],"attribute":"火/武","bloodline":""},"炽心勇狮":{"eggGroups":["动物组"],"attribute":"火/武","bloodline":""},"毛头小蛛":{"eggGroups":["昆虫组","妖精组"],"attribute":"地/虫","bloodline":""},"捕尘长绒":{"eggGroups":["昆虫组","妖精组"],"attribute":"地/虫","bloodline":""},"食尘短绒":{"eggGroups":["昆虫组","妖精组"],"attribute":"地/虫","bloodline":""},"画精灵":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通","bloodline":""},"画像守护":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通","bloodline":""},"画间法师手":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通/幻","bloodline":""},"画间沉铁兽":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通/武","bloodline":""},"书魔虫":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通","bloodline":""},"书卷守护":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通","bloodline":""},"古卷执政官":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通/幻","bloodline":""},"古卷匣魔像":{"eggGroups":["巨灵组","妖精组"],"attribute":"普通/武","bloodline":""},"嗜光嗡嗡":{"eggGroups":["昆虫组"],"attribute":"光/恶","bloodline":""},"窃光蚊":{"eggGroups":["昆虫组"],"attribute":"光/恶","bloodline":""},"不咕钟":{"eggGroups":["天空组","机械组"],"attribute":"机械/幻","bloodline":""},"溯源钟":{"eggGroups":["天空组","机械组"],"attribute":"机械/幻","bloodline":""},"小箱怪":{"eggGroups":["妖精组","机械组"],"attribute":"机械/幻","bloodline":""},"迷迷箱怪":{"eggGroups":["妖精组","机械组"],"attribute":"机械/幻","bloodline":""},"学院呱呱":{"eggGroups":["无法孵蛋"],"attribute":"武","bloodline":""},"加油海葵":{"eggGroups":["两栖组","妖精组"],"attribute":"水/萌","bloodline":""},"加油蟹":{"eggGroups":["两栖组","妖精组"],"attribute":"水/萌","bloodline":""},"烟花团":{"eggGroups":["魔力组","机械组"],"attribute":"火/毒","bloodline":""},"烟花伯爵":{"eggGroups":["魔力组","机械组"],"attribute":"火/毒","bloodline":""},"咕咕帽":{"eggGroups":["妖精组"],"attribute":"幽","bloodline":""},"咕德帽帽":{"eggGroups":["妖精组"],"attribute":"幽","bloodline":""},"优优":{"eggGroups":["动物组"],"attribute":"光/地","bloodline":""},"绒光优优":{"eggGroups":["动物组"],"attribute":"光/地","bloodline":""},"小鼓象":{"eggGroups":["动物组","机械组"],"attribute":"机械","bloodline":""},"巨鼓象":{"eggGroups":["动物组","机械组"],"attribute":"机械","bloodline":""},"猴麦仔":{"eggGroups":["动物组","机械组"],"attribute":"普通/机械","bloodline":""},"音碟吼":{"eggGroups":["动物组","机械组"],"attribute":"普通/机械","bloodline":""},"钨丝贝贝":{"eggGroups":["无法孵蛋"],"attribute":"机械","bloodline":""},"辉光幕机":{"eggGroups":["无法孵蛋"],"attribute":"机械","bloodline":""},"机幕方舟":{"eggGroups":["无法孵蛋"],"attribute":"机械","bloodline":""},"炫光迪迪":{"eggGroups":["动物组","大地组"],"attribute":"光/电","bloodline":""},"​​霹雳迪迪":{"eggGroups":["动物组","大地组"],"attribute":"光/电","bloodline":""},"宝藏小狐":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"宝藏沙狐":{"eggGroups":["动物组"],"attribute":"普通","bloodline":""},"火红尾":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"雅丹鬃":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"雪影娃娃·春日":{"eggGroups":["妖精组","拟人组"],"attribute":"草/冰","bloodline":""},"莫比乌乌":{"eggGroups":["动物组"],"attribute":"龙/萌","bloodline":""},"克莱因龙":{"eggGroups":["动物组"],"attribute":"龙/萌","bloodline":""},"森豆丁":{"eggGroups":["动物组"],"attribute":"草","bloodline":""},"森蛮人":{"eggGroups":["动物组"],"attribute":"草","bloodline":""},"森巨人":{"eggGroups":["动物组"],"attribute":"草","bloodline":""},"丁丁卯":{"eggGroups":["动物组"],"attribute":"虫/机械","bloodline":""},"卯山咪钥":{"eggGroups":["动物组"],"attribute":"虫/机械","bloodline":""},"火豆丁":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"火蛮人":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"火巨人":{"eggGroups":["动物组"],"attribute":"火","bloodline":""},"点点":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"珀尔鼬":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"苞米仔":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"炮米花":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"诅咒狼灵":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"新月狼灵":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"银月狼王":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"新月鹭":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"月辉鹭":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"月使鹭纳":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"章脑丸":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"智辉章脑":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"乌头蝇":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"乌蝇飞贼":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"小浣蛋":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"黑手浣熊":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"幽铃":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"摇铃魔偶":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"布灵":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"布灵布灵":{"eggGroups":["动物组"],"attribute":"萌","bloodline":""},"裘卡老师":{"eggGroups":["动物组","妖精组"],"attribute":"毒","bloodline":""},"珂赛特老师":{"eggGroups":["天空组","拟人组"],"attribute":"毒/恶","bloodline":""},"希露德老师":{"eggGroups":["天空组"],"attribute":"普通","bloodline":""},"迷失的雪巨人":{"eggGroups":["巨灵组","拟人组"],"attribute":"冰","bloodline":""},"自动变形测试-斑斑":{"eggGroups":["天空组"],"attribute":"翼","bloodline":""},"地鼠-A2拾遗变形任务用":{"eggGroups":["动物组"],"attribute":"地","bloodline":""},"小帕尔-变形测试用":{"eggGroups":["无法孵蛋"],"attribute":"草","bloodline":""},"帕尔萨斯-变形测试用":{"eggGroups":["无法孵蛋"],"attribute":"毒/恶","bloodline":""},"龙息帕尔-变形测试用":{"eggGroups":["无法孵蛋"],"attribute":"草","bloodline":""},"石肤蜥-极化钝化测试用":{"eggGroups":["两栖组","大地组"],"attribute":"地","bloodline":""},"紫翎鹰-变形测试用":{"eggGroups":["无法孵蛋"],"attribute":"翼","bloodline":""}};
+var NAME_LIST = ["​​霹雳迪迪","一窝蜂","丁丁卯","上岸蛙","不咕钟","丢丢","乌头蝇","乌拉塔","乌蝇飞贼","乌达","乖乖鹄","九尾狐","九幽菇","书卷守护","书魔虫","仪使者","仪式之星","仪式巨像","伊兰亚龙","伊贝儿","伊贝粉粉","伊雷龙","伏地兽","优优","健猫教练","光纤兽","克莱因龙","公平鸽","兽花蕾","冬羽雀","冰封怨灵","冰钻布鲁斯","凡雀","凡鹰","利灯鱼","刺电环","刺盔虫","刺轮砣","加油海葵","加油蟹","动力猿","化蝶","千棘盔","卡卡虫","卡拉波斯","卡波","卡洛儿","卡瓦重","卯山咪钥","卷毛鸭","卷胡巨獭","厉毒修萝","厉毒小萝","双灯鱼","古卷匣魔像","古卷执政官","古啦多","古钟蛇","叮叮恶魔","可爱猿","可立鸡","号儿鱼","吸泥鸥","呆小路","呼呼猪","呼拉猫","咔咔壳","咔咔羽毛","咔咔雀","咔咔鸟","咕咕帽","咕德帽帽","哭哭菇","喵呜","喵喵","嗜光嗡嗡","嗜波螺","嘟嘟煲","嘟嘟锅","噼啪鸟","圆号鱼","圆眼蜘蛛","圣代甜甜","圣剑-X","圣剑侍从","圣羽翼王","地鼠","地鼠-A2拾遗变形任务用","增肌猫","墨鱿士","声波缇塔","壳乙螺","壳栗丝鼠","多啦多","多多","多彩方方","多灵","多灵主","多菇丁","多西","夜宿颅","夜枭","大头骨龙","大耳帽兜","奇丽叶","奇丽花","奇丽草","奔乐鹿","奔波鼠","学院呱呱","宝藏小狐","宝藏沙狐","寂灭骨龙","寒音蛇","小丑兔","小丑公爵","小丑豆豆","小勇狮","小夜","小帕尔","小帕尔-变形测试用","小怂猫","小星光","小浣蛋","小灵菇","小灵面","小独角兽","小狮鹫","小甲虫","小电企鹅","小皮球","小箱怪","小绒茧","小翼龙","小草虫","小雪人","小鹬","小黑猫","小鼓象","小鼠獭","尖嘴狐仙","尖角蜘蛛","岚鸟","巨噬针鼹","巨灵石","巨鼓象","布克棱岩","布是岩","布是石","布灵","布灵布灵","布瓜蝌","布鲁斯","帅帅魔偶","希露德老师","帕尔萨斯","帕尔萨斯-变形测试用","帕帕斯卡","帽兜娃娃","幻影灵菇","幻灵菇","幽冥眼","幽影树","幽星光","幽铃","库多西","彩蝶鲨","影狸","快鳍鱼","忽幽狸","怒目怂猫","怖哭菇","怖须菇","恶魔叮","恶魔狼","恶魔红钻","护主犬","抱枕松鼠","抹茶布丁","拉特","捕尘长绒","摇铃魔偶","斑斑","斑枭","新月狼灵","新月鹭","旋叶虫","星云旅者","星光狮","星尘虫","春兔","春团","春花兔","晕晕鸡","晶石蜗","智辉章脑","暗影灵面","暮星辰","曜星光","月亮砣","月使鹭纳","月牙雪熊","月辉鹭","朔夜伊芙","机幕方舟","机械方方","机甲小子","权杖-V","权杖-Ⅱ","松仔","松叶羊","板板壳","果冻","柴渣虫","栗鼠","格兰球","格兰种子","格兰花","格斗小五","格斗小八","格斗小六","梦悠悠","梦想三三","梦游","棋棋","棋祈督","棋绮后","棋骑士","棋齐垒","森巨人","森蛮人","森豆丁","椰浆布丁","武者鸡","毛头小蛛","毛毛","气球猫","水泡壳","水滴蛇","水灵","水蓝蓝","水蛇锁","治愈兔","波多西","波波拉","波波螺","泥吼牙","流浪鼠","海枝枝","海盔虫","海豹战士","海豹船长","消波螺","深蓝鲸","混乱鱿彩","游蛇魔使","溯源钟","火尾战士","火尾瓦特","火巨人","火焰猿","火神","火红尾","火羽","火花","火蛮人","火豆丁","灵狐","灵羽勇士","炫光迪迪","炮米花","点点","炽心勇狮","炽热猿","炽焰狮","烈火守护","烈钻鸟","烟花伯爵","烟花团","焰火","熔岩布丁","燃薪虫","燕尾獭","爆焰仔","爆焰喷喷","爬爬","爵士鹿","牵线木偶","犀角鸟","猴麦仔","獠牙猪","珀尔鼬","珂赛特老师","琉璃水母","瑰眼仔","甜田螺","电企鹅","电动长颈鹿","电咩咩","电球咩咩","画像守护","画精灵","画间沉铁兽","画间法师手","疾光千兽","白发懒人","白发路路","白金独角兽","皇家狮鹫","瞌睡王","矮脚爬爬","石冠王蜥","石刺蜥","石石","石肤蜥","石肤蜥-极化钝化测试用","矿晶虫","神圣狮鹫","秩序鱿墨","空空颅","窃光蚊","立方人","章脑丸","粉咩咩","粉星仔","粉粉星","粉耳星兔","紫夜","紫翎鹰","紫翎鹰-变形测试用","红丝绒","红绒十字","绅士鸡","绒仙子","绒光优优","绒绒","绿翼鸟","绿耳松鼠","绿草精灵","缇塔","罗隐","翠顶夫人","翡翠水母","翼龙","耳翎瑰魅","胆小鳗鱼","脆筒甜甜","自动变形测试-斑斑","舞动路路","芋香巨角蛛","花影羚羊","花怨鳗","花衣蝶","花魁蜂后","苞米仔","荆棘电环","草头鸭","草衣虫","莫比乌乌","菇菇丁","菊花梨","落星虫","落陨星兔","蒲公英","蒲公英娃娃","蓝珠天鹅","蓝蝶鲨","蓬叶虫","螺旋帕帕","裘力","裘卡","裘卡老师","裘洛","记忆石","诅咒狼灵","豆丁鱼","贝加尔","贝古斯","贝瑟","贪食鼹","超能阿布","蹦床松鼠","蹦蹦种子","蹦蹦花","蹦蹦草","辉光幕机","迪莫","迷你乌","迷失的雪巨人","迷迷箱怪","逗逗","遁地鼠","遁鼠","邪眼巨魔","鄙目鹬","酷拉","里奥","里拉鳐","针叶巡林","钨丝贝贝","铃兰羊","铠甲虫","银月狼王","锤头鹳","锥尾羊","长尾火鸟","闪电环","闪电鳗鱼","阿布","阿米亚特","阿米樱","陨星虫","雅丹鬃","雪娃娃","雪巨人","雪影娃娃","雪影娃娃·春日","雪怪","雪灵","雪绒鸟","雪蛮人","雪豆丁","雪顶布鲁斯","音碟吼","音速犬","风滚暮虫","风铃鲨","食尘短绒","香草甜甜","高脚鹬","魔力猫","魔眷鸟","魔翼鸟","魔草巫灵","鳗尾兽","鸭吉吉","黄蜂后","黑手浣熊","黑猫巫师","黑羽夫人","齿轮小子","龙息帕尔","龙息帕尔-变形测试用","龙鱼"];
+
+/* ===== STATE ===== */
+var STATE = {
+  sprites: [],
+  filters: { name:[], attribute:'', bloodline:'', nature:[], gender:[], specialty:[], medal:[], eggGroup:[], box:[],
+    ivRanges:{ hp:{min:0,max:10},atk:{min:0,max:10},spAtk:{min:0,max:10},def:{min:0,max:10},spDef:{min:0,max:10},spd:{min:0,max:10} } },
+  filterModes: { specialty:'AND', medal:'AND', eggGroup:'AND', gender:'AND', box:'AND' },
+  selectedIds: {}, pendingCSV: null, editingId: null, currentFloatField: null,
+  formNature: { f:'', e:'' }, statsShowDetail: true
+};
+
+/* ===== UTILS ===== */
+function normalizeName(n) { return String(n||'').replace(/（.*$|\(.*$/g,'').trim(); }
+function genId() { return Date.now().toString(36)+Math.random().toString(36).substr(2,8); }
+function saveToStorage() { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE.sprites)); }
+function loadFromStorage() { try{var r=localStorage.getItem(STORAGE_KEY);if(r){STATE.sprites=JSON.parse(r);STATE.sprites.forEach(function(s){if(s.type&&!s.bloodline){s.bloodline=s.type;s.attribute="";}if(!s.attribute)s.attribute="";if(!s.bloodline)s.bloodline="";if(!s.box)s.box="";});}}catch(e){STATE.sprites=[];} }
+
+function toast(msg, type) {
+  type=type||'info'; var el=document.createElement('div'); el.className='toast toast-'+type; el.textContent=msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(function(){el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(function(){el.remove();},300);},2500);
+}
+
+var Modal = {
+  open: function(id){ document.getElementById(id).classList.add('active'); },
+  close: function(id){ document.getElementById(id).classList.remove('active'); }
+};
+
+/* ===== EGG GROUP ===== */
+var SpriteData = {
+  get: function(name){ var n=normalizeName(name); var d=SPRITE_DATA[n]; return d||{eggGroups:["未知"],attribute:"",bloodline:""}; },
+  getEggGroups: function(name){ return this.get(name).eggGroups; },
+  getAttribute: function(name){ return this.get(name).attribute; },
+  getBloodline: function(name){ return this.get(name).bloodline; },
+  getAllNames: function(){ return NAME_LIST; }
+};
+
+/* ===== NAME AUTOCOMPLETE ===== */
+var Autocomplete = {
+  _activeIdx: -1,
+  _currentPrefix: '',
+
+  setup: function(prefix) {
+    var input = document.getElementById(prefix+'_name');
+    var dropdown = document.getElementById(prefix+'_nameDropdown');
+    if (!input||!dropdown) return;
+    var self = this;
+
+    input.addEventListener('input', function() {
+      var val = this.value.trim();
+      if (!val) { dropdown.classList.remove('show'); self._activeIdx=-1; return; }
+      var matches = NAME_LIST.filter(function(n){ return n.includes(val); }).slice(0, 15);
+      if (matches.length===0) { dropdown.classList.remove('show'); self._activeIdx=-1; return; }
+      self._activeIdx = -1;
+      self._currentPrefix = prefix;
+      dropdown.innerHTML = matches.map(function(m,i){
+        var d=SPRITE_DATA[m];var eggs=(d&&d.eggGroups||[]).join(',');var attr=d&&d.attribute?' ·'+d.attribute:'';
+        return '<div class="ac-item" data-idx="'+i+'" data-name="'+m+'">'+m+'<span class="ac-egg">'+eggs+'</span></div>';
+      }).join('');
+      dropdown.classList.add('show');
+    });
+
+    input.addEventListener('keydown', function(e) {
+      var items = dropdown.querySelectorAll('.ac-item');
+      if (e.key==='ArrowDown') { e.preventDefault(); self._activeIdx=Math.min(self._activeIdx+1,items.length-1); self._highlight(items); }
+      else if (e.key==='ArrowUp') { e.preventDefault(); self._activeIdx=Math.max(self._activeIdx-1,-1); self._highlight(items); }
+      else if (e.key==='Enter') {
+        e.preventDefault();
+        if (self._activeIdx>=0 && items[self._activeIdx]) { items[self._activeIdx].click(); }
+        else if (items.length===1) { items[0].click(); }
+      }
+      else if (e.key==='Escape') { dropdown.classList.remove('show'); self._activeIdx=-1; }
+    });
+
+    input.addEventListener('blur', function() { setTimeout(function(){ dropdown.classList.remove('show'); self._activeIdx=-1; },150); });
+
+    dropdown.addEventListener('mousedown', function(e) {
+      var item = e.target.closest('.ac-item');
+      if (item) {
+        var name = item.dataset.name;
+        input.value = name;
+        dropdown.classList.remove('show');
+        self._activeIdx = -1;
+        FormManager.onNameSelected(prefix, name);
+      }
+    });
+  },
+
+  _highlight: function(items) {
+    items.forEach(function(it,i){ if(i===this._activeIdx){it.classList.add('active');it.scrollIntoView({block:'nearest'});}else{it.classList.remove('active');} }, this);
+  }
+};
+
+/* ===== CSV ===== */
+var CSVManager = {
+  parseLine: function(line) {
+    var fields=[],field='',inQ=false;
+    for(var i=0;i<line.length;i++){var ch=line[i];if(inQ){if(ch==='"'){if(i+1<line.length&&line[i+1]==='"'){field+='"';i++;}else{inQ=false;}}else{field+=ch;}}else{if(ch==='"'){inQ=true;}else if(ch===','){fields.push(field);field='';}else{field+=ch;}}}
+    fields.push(field); return fields;
+  },
+  parse: function(txt) {
+    txt=txt.replace(/^﻿/,''); var lines=txt.split(/\r?\n/).filter(function(l){return l.trim();});
+    if(lines.length<2)return[];
+    var hdr=CSVManager.parseLine(lines[0]),idx={};
+    hdr.forEach(function(h,i){idx[h.trim()]=i;});
+    return lines.slice(1).map(function(l){var c=CSVManager.parseLine(l);if(c.length<10)return null;
+      function g(k,d){var i=idx[k];return i!==undefined?c[i]||d:d;}
+      var nm=normalizeName(g('名称',''));
+      return {id:genId(),name:nm,
+        attribute:g('属性',''),bloodline:g('血脉',''),nature:g('性格',''),gender:g('性别',''),
+        specialty:(g('特长','')?g('特长','').split(';').filter(Boolean):[]),
+        medal:(g('奖牌','')?g('奖牌','').split(';').filter(Boolean):[]),
+        eggGroups:SpriteData.getEggGroups(nm),
+        box:g('盒子',''),
+        ivs:{hp:Number(g('生命','0')),atk:Number(g('物攻','0')),spAtk:Number(g('魔攻','0')),def:Number(g('物防','0')),spDef:Number(g('魔防','0')),spd:Number(g('速度','0'))}
+      };
+    }).filter(Boolean);
+  },
+  export: function() {
+    if(!STATE.sprites.length){toast('无数据可导出','error');return;}
+    var h='名称,属性,血脉,性格,性别,特长,奖牌,蛋组,生命,物攻,魔攻,物防,魔防,速度,盒子';
+    var rows=STATE.sprites.map(function(s){return[s.name,s.attribute,s.bloodline,s.nature,s.gender,s.specialty.join(';'),s.medal.join(';'),s.eggGroups.join(';'),s.ivs.hp,s.ivs.atk,s.ivs.spAtk,s.ivs.def,s.ivs.spDef,s.ivs.spd,s.box].join(',');});
+    var csv='﻿'+h+'\n'+rows.join('\n'); var b=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='rocom_sprites_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+    toast('导出成功 ('+STATE.sprites.length+' 条)','success');
+  },
+  confirmOverwrite: function(){STATE.sprites=STATE.pendingCSV||[];saveToStorage();UI.renderAll();Modal.close('conflictModal');toast('成功导入 '+STATE.sprites.length+' 条','success');}
+};
+
+/* ===== FILTER ===== */
+var FilterManager = {
+  apply: function() {
+    var list=STATE.sprites.slice(),f=STATE.filters,m=STATE.filterModes;
+    if(f.name.length){list=list.filter(function(s){return f.name.includes(s.name);});}
+    if(f.attribute){list=list.filter(function(s){return s.attribute===f.attribute;});} if(f.bloodline){list=list.filter(function(s){return s.bloodline===f.bloodline;});}
+    if(f.nature.length){list=list.filter(function(s){return f.nature.includes(s.nature);});}
+    if(f.box.length){list=list.filter(function(s){return f.box.includes(s.box);});}
+    function mf(items,vals,mode,acc){if(!vals.length)return items;if(mode==='OR')return items.filter(function(it){var v=acc(it);return vals.some(function(x){return v.includes(x);});});else return items.filter(function(it){var v=acc(it);return vals.every(function(x){return v.includes(x);});});}
+    list=mf(list,f.gender,m.gender,function(s){return[s.gender];});
+    list=mf(list,f.specialty,m.specialty,function(s){return s.specialty;});
+    list=mf(list,f.medal,m.medal,function(s){return s.medal;});
+    list=mf(list,f.eggGroup,m.eggGroup,function(s){return s.eggGroups;});
+    STAT_KEYS.forEach(function(k){var r=f.ivRanges[k];list=list.filter(function(s){return s.ivs[k]>=r.min&&s.ivs[k]<=r.max;});});
+    return list;
+  },
+  openFloat: function(field,triggerEl){
+    this.closeFloat(); STATE.currentFloatField=field;
+    var panel=document.getElementById('floatPanel');
+    var labels={name:'名称',attribute:'属性',bloodline:'血脉',gender:'性别',specialty:'特长',medal:'奖牌',eggGroup:'蛋组',box:'盒子'};
+    document.getElementById('floatTitle').textContent='筛选: '+(labels[field]||field);
+    var rect=triggerEl.getBoundingClientRect();
+    panel.style.top=Math.min(rect.bottom+4,window.innerHeight-380)+'px';
+    panel.style.left=Math.min(rect.left,window.innerWidth-260)+'px'; panel.style.display='flex';
+    var options=[];
+    if(field==='name')options=NAME_LIST.slice().sort();
+    else if(field==='attribute')options=Array.from(new Set(STATE.sprites.map(function(s){return s.attribute;}).filter(Boolean))).sort(); else if(field==='bloodline')options=Array.from(new Set(STATE.sprites.map(function(s){return s.bloodline;}).filter(Boolean))).sort();
+    else if(field==='gender')options=['雄性','雌性'];
+    else if(field==='specialty')options=SPECIALTIES;
+    else if(field==='medal')options=MEDALS;
+    else if(field==='eggGroup')options=EGG_GROUPS;
+    else if(field==='box')options=Array.from(new Set(STATE.sprites.map(function(s){return s.box;}).filter(Boolean))).sort();
+    var counts={};
+    STATE.sprites.forEach(function(s){var vals=field==='name'?[s.name]:field==='type'?[s.bloodline]:field==='gender'?[s.gender]:field==='box'?[s.box]:s[field];if(!vals)return;vals.forEach(function(v){counts[v]=(counts[v]||0)+1;});});
+    var sel=STATE.filters[field]||[],mode=STATE.filterModes[field]||'AND';
+    document.getElementById('floatModeBadge').textContent=mode;
+    document.getElementById('floatModeBadge').className='filter-mode-badge'+(mode==='AND'?' and':'');
+    document.getElementById('floatList').innerHTML=options.map(function(o){return'<label class="float-item"><input type="checkbox" value="'+o+'"'+(sel.includes(o)?' checked':'')+' onchange="FilterManager.onFloatItemChange()"><span>'+o+'</span><span class="item-count">'+(counts[o]||0)+'</span></label>';}).join('');
+    setTimeout(function(){document.addEventListener('click',FilterManager._fo,true);},10);
+  },
+  closeFloat: function(){document.getElementById('floatPanel').style.display='none';STATE.currentFloatField=null;document.removeEventListener('click',FilterManager._fo,true);},
+  _fo: function(e){var p=document.getElementById('floatPanel');if(!p.contains(e.target)&&!e.target.closest('.filter-chip'))FilterManager.closeFloat();},
+  onFloatItemChange: function(){if(!STATE.currentFloatField)return;var f=STATE.currentFloatField;STATE.filters[f]=Array.from(document.querySelectorAll('#floatList input:checked')).map(function(cb){return cb.value;});UI.renderAll();},
+  toggleFloatMode: function(){if(!STATE.currentFloatField)return;var f=STATE.currentFloatField;if(STATE.filterModes[f])STATE.filterModes[f]=STATE.filterModes[f]==='AND'?'OR':'AND';document.getElementById('floatModeBadge').textContent=STATE.filterModes[f];document.getElementById('floatModeBadge').className='filter-mode-badge'+(STATE.filterModes[f]==='AND'?' and':'');UI.renderAll();},
+  clearFloatField: function(){if(!STATE.currentFloatField)return;STATE.filters[STATE.currentFloatField]=[];this.closeFloat();UI.renderAll();},
+  clearAll: function(){STATE.filters={name:[],attribute:'',bloodline:'',nature:[],gender:[],specialty:[],medal:[],eggGroup:[],box:[],ivRanges:{hp:{min:0,max:10},atk:{min:0,max:10},spAtk:{min:0,max:10},def:{min:0,max:10},spDef:{min:0,max:10},spd:{min:0,max:10}}};STATE.filterModes={specialty:'AND',medal:'AND',eggGroup:'AND',gender:'AND',box:'AND'};UI.renderAll();},
+  onChipClick: function(field,el){if(field==='nature')return;FilterManager.openFloat(field,el);}
+};
+
+/* ===== FILTER NATURE MATRIX (multi-select) ===== */
+var MatrixManager = {
+  init: function(){
+    var h='<div class="cell corner"></div>';
+    for(var c=0;c<6;c++)h+='<div class="cell col-hdr" onclick="MatrixManager.toggleCol('+c+')">+'+COL_HEADERS[c]+'</div>';
+    for(var r=0;r<6;r++){h+='<div class="cell row-hdr" onclick="MatrixManager.toggleRow('+r+')">-'+ROW_HEADERS[r]+'</div>';
+      for(var c=0;c<6;c++){if(r===c)h+='<div class="cell diagonal">╲</div>';
+        else{var n=NATURE_MATRIX[r][c],s=STATE.filters.nature.includes(n)?' selected':'';h+='<div class="cell'+s+'" onclick="MatrixManager.toggleNature(\''+n+'\')">'+n+'</div>';}}}
+    document.getElementById('matrixContainer').innerHTML='<div class="matrix">'+h+'</div>';
+    document.getElementById('matrixSelectedCount').textContent=STATE.filters.nature.length;
+  },
+  toggleNature: function(n){var i=STATE.filters.nature.indexOf(n);if(i>=0)STATE.filters.nature.splice(i,1);else STATE.filters.nature.push(n);this.init();UI.renderAll();},
+  toggleRow: function(r){var rn=NATURE_MATRIX[r].filter(function(n){return n!==null;}),all=rn.every(function(n){return STATE.filters.nature.includes(n);});if(all)rn.forEach(function(n){var i=STATE.filters.nature.indexOf(n);if(i>=0)STATE.filters.nature.splice(i,1);});else rn.forEach(function(n){if(!STATE.filters.nature.includes(n))STATE.filters.nature.push(n);});this.init();UI.renderAll();},
+  toggleCol: function(c){var cn=[];for(var r=0;r<6;r++)if(r!==c)cn.push(NATURE_MATRIX[r][c]);var all=cn.every(function(n){return STATE.filters.nature.includes(n);});if(all)cn.forEach(function(n){var i=STATE.filters.nature.indexOf(n);if(i>=0)STATE.filters.nature.splice(i,1);});else cn.forEach(function(n){if(!STATE.filters.nature.includes(n))STATE.filters.nature.push(n);});this.init();UI.renderAll();}
+};
+
+/* ===== FORM NATURE MATRIX (single-select) ===== */
+function renderFormMatrix(prefix) {
+  var ct=document.getElementById(prefix+'_natureMatrix');if(!ct)return;
+  var sel=STATE.formNature[prefix]||'',h='<div class="fm-cell fm-corner"></div>';
+  for(var c=0;c<6;c++)h+='<div class="fm-cell fm-chdr">+'+COL_HEADERS[c]+'</div>';
+  for(var r=0;r<6;r++){h+='<div class="fm-cell fm-rhdr">-'+ROW_HEADERS[r]+'</div>';
+    for(var c=0;c<6;c++){if(r===c)h+='<div class="fm-cell fm-diag">╲</div>';
+      else{var n=NATURE_MATRIX[r][c],sc=n===sel?' fm-selected':'';h+='<div class="fm-cell'+sc+'" onclick="FormManager.selectNature(\''+prefix+'\',\''+n+'\')">'+n+'</div>';}}}
+  ct.innerHTML=h;
+  var d=document.getElementById(prefix+'_natureDisplay');
+  if(d){if(sel){var ef=NATURE_EFFECTS[sel];d.innerHTML='已选: <strong>'+sel+'</strong> ('+STAT_EMOJI[ef.add]+'增益·'+STAT_EMOJI[ef.sub]+'减益)';}else{d.innerHTML='<span style="color:var(--c-text-muted);">请点击矩阵中的性格</span>';}}
+}
+
+/* ===== IV SLIDER + EDITABLE ===== */
+function renderIVSliders(prefix) {
+  var ct=document.getElementById(prefix+'_ivs');if(!ct)return;
+  ct.innerHTML=STAT_KEYS.map(function(k){return'<div class="iv-slider-item" id="'+prefix+'_'+k+'_item">'+
+    '<div class="iv-label">'+STAT_EMOJI[k]+STAT_NAMES[k]+'</div>'+
+    '<div class="iv-value-display val-0" id="'+prefix+'_'+k+'_display" onclick="IVManager.startEdit(\''+prefix+'\',\''+k+'\')">0</div>'+
+    '<input class="iv-value-edit" id="'+prefix+'_'+k+'_edit" value="0" maxlength="2" onblur="IVManager.commitEdit(\''+prefix+'\',\''+k+'\')" onkeydown="IVManager.onEditKey(event,\''+prefix+'\',\''+k+'\')">'+
+    '<input type="range" min="0" max="4" value="0" step="1" id="'+prefix+'_'+k+'" oninput="IVManager.onSliderInput(\''+prefix+'\',\''+k+'\')">'+
+    '<div class="iv-slider-ticks"><span>0</span><span>7</span><span>8</span><span>9</span><span>10</span></div></div>';}).join('');
+}
+
+var IVManager = {
+  onSliderInput: function(prefix,key){
+    var s=document.getElementById(prefix+'_'+key),d=document.getElementById(prefix+'_'+key+'_display');
+    if(!s||!d)return;var v=IV_MAP[parseInt(s.value)];d.textContent=v;d.className='iv-value-display val-'+v;
+    var ed=document.getElementById(prefix+'_'+key+'_edit');if(ed)ed.value=v;
+  },
+  setValue: function(prefix,key,ivVal){
+    var s=document.getElementById(prefix+'_'+key);if(!s)return;
+    s.value=IV_REVERSE[ivVal]!==undefined?IV_REVERSE[ivVal]:0;
+    var d=document.getElementById(prefix+'_'+key+'_display');if(d){d.textContent=ivVal;d.className='iv-value-display val-'+ivVal;}
+    var ed=document.getElementById(prefix+'_'+key+'_edit');if(ed)ed.value=ivVal;
+  },
+  getValue: function(prefix,key){var s=document.getElementById(prefix+'_'+key);return s?IV_MAP[parseInt(s.value)]||0:0;},
+  resetAll: function(prefix){STAT_KEYS.forEach(function(k){IVManager.setValue(prefix,k,0);});},
+
+  _prevValue: {},
+  startEdit: function(prefix,key){
+    var item=document.getElementById(prefix+'_'+key+'_item'),ed=document.getElementById(prefix+'_'+key+'_edit');
+    if(!item||!ed)return;
+    var cur=IVManager.getValue(prefix,key);
+    IVManager._prevValue[prefix+'_'+key]=cur;
+    ed.value=cur;
+    item.classList.add('editing');
+    setTimeout(function(){ed.focus();ed.select();},10);
+  },
+  commitEdit: function(prefix,key){
+    var item=document.getElementById(prefix+'_'+key+'_item'),ed=document.getElementById(prefix+'_'+key+'_edit');
+    if(!item||!ed)return;
+    var raw=parseInt(ed.value);
+    if(isNaN(raw)||[0,7,8,9,10].indexOf(raw)===-1){
+      var prev=IVManager._prevValue[prefix+'_'+key]||0;
+      toast('输入值无效，仅允许 0、7、8、9、10','error');
+      IVManager.setValue(prefix,key,prev);
+    } else {
+      IVManager.setValue(prefix,key,raw);
+    }
+    item.classList.remove('editing');
+  },
+  onEditKey: function(e,prefix,key){
+    if(e.key==='Enter'){e.preventDefault();IVManager.commitEdit(prefix,key);}
+    else if(e.key==='Escape'){var item=document.getElementById(prefix+'_'+key+'_item');if(item)item.classList.remove('editing');}
+    else if(!/[0-9]/.test(e.key)&&!['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key)){e.preventDefault();}
+  }
+};
+
+/* ===== FORM ===== */
+var FormManager = {
+  init: function(){
+    renderIVSliders('f');renderIVSliders('e');renderFormMatrix('f');renderFormMatrix('e');
+    // Specialty: radio buttons (single-select)
+    var specOpts=SPECIALTIES.map(function(s,i){return'<label><input type="radio" name="%%_specialty" value="'+s+'"'+(i===0?' checked':'')+'><span>'+s+'</span></label>';}).join('');
+    document.getElementById('f_specialty').innerHTML=specOpts.replace(/%%/g,'f');
+    document.getElementById('e_specialty').innerHTML=specOpts.replace(/%%/g,'e');
+    // Medals: checkboxes
+    var medOpts=MEDALS.map(function(m){return'<label><input type="checkbox" value="'+m+'"><span>'+m+'</span></label>';}).join('');
+    document.getElementById('f_medal').innerHTML=medOpts;
+    document.getElementById('e_medal').innerHTML=medOpts;
+    Autocomplete.setup('f');
+  },
+  onNameSelected: function(prefix,name){
+    var d=SpriteData.get(name);document.getElementById(prefix+'_eggDisplay').innerHTML=d.eggGroups.map(function(g){return'<span class="tag">'+g+'</span>';}).join('');document.getElementById(prefix+'_attribute').value=d.attribute;if(!document.getElementById(prefix+'_bloodline').value)document.getElementById(prefix+'_bloodline').value=d.bloodline;
+    FormManager.updateBoxSuggest();
+  },
+  selectNature: function(prefix,nature){STATE.formNature[prefix]=nature;document.getElementById(prefix+'_nature').value=nature;renderFormMatrix(prefix);},
+  updateBoxSuggest: function(){
+    var boxes=Array.from(new Set(STATE.sprites.map(function(s){return s.box;}).filter(Boolean))).sort();
+    document.getElementById('boxSuggest').innerHTML=boxes.map(function(b){return'<option value="'+b+'">';}).join('');
+  },
+  validate: function(prefix){
+    var name=document.getElementById(prefix+'_name').value.trim(),nature=document.getElementById(prefix+'_nature').value,gender=document.getElementById(prefix+'_gender').value;
+    if(!name){toast('请输入精灵名称','error');return false;}
+    if(!NAME_LIST.includes(name)){toast('「'+name+'」不在精灵列表中，请从建议中选择','error');return false;}
+    if(!nature){toast('请在性格矩阵中选择性格','error');return false;}
+    if(!gender){toast('请选择性别','error');return false;}
+    return true;
+  },
+  getSpecialty: function(prefix){var r=document.querySelector('input[name="'+prefix+'_specialty"]:checked');return r?[r.value]:[];},
+  setSpecialty: function(prefix,vals){document.querySelectorAll('input[name="'+prefix+'_specialty"]').forEach(function(r){r.checked=vals.includes(r.value);});},
+  submit: function(){
+    if(!this.validate('f'))return;
+    var name=normalizeName(document.getElementById('f_name').value),bloodline=document.getElementById('f_bloodline').value.trim(),attribute=document.getElementById('f_attribute').value.trim(),
+      nature=document.getElementById('f_nature').value,gender=document.getElementById('f_gender').value,
+      spec=this.getSpecialty('f'),med=Array.from(document.querySelectorAll('#f_medal input:checked')).map(function(cb){return cb.value;}),
+      box=document.getElementById('f_box').value.trim();
+    var sprite={id:genId(),name:name,bloodline:bloodline,attribute:attribute,nature:nature,gender:gender,specialty:spec,medal:med,eggGroups:SpriteData.getEggGroups(name),box:box,ivs:{}};
+    STAT_KEYS.forEach(function(k){sprite.ivs[k]=IVManager.getValue('f',k);});
+    STATE.sprites.push(sprite);saveToStorage();this.reset();UI.renderAll();toast('添加成功: '+name,'success');
+  },
+  reset: function(){
+    document.getElementById('f_name').value='';document.getElementById('f_attribute').value='';document.getElementById('f_bloodline').value='';document.getElementById('f_gender').value='';document.getElementById('f_box').value='';
+    document.querySelectorAll('#f_medal input').forEach(function(cb){cb.checked=false;});
+    document.querySelector('input[name="f_specialty"][value="无"]').checked=true;
+    IVManager.resetAll('f');STATE.formNature['f']='';document.getElementById('f_nature').value='';renderFormMatrix('f');
+    document.getElementById('f_eggDisplay').innerHTML='<span style="color:var(--c-text-muted);font-size:0.78rem;">选择名称后自动匹配蛋组</span>';
+  },
+  openEdit: function(id){
+    var s=STATE.sprites.find(function(x){return x.id===id;});if(!s)return;STATE.editingId=id;
+    document.getElementById('e_name').value=s.name;document.getElementById('e_attribute').value=s.attribute||'';document.getElementById('e_bloodline').value=s.bloodline||'';
+    document.getElementById('e_gender').value=s.gender;document.getElementById('e_box').value=s.box||'';
+    STATE.formNature['e']=s.nature;document.getElementById('e_nature').value=s.nature;renderFormMatrix('e');
+    document.querySelectorAll('#e_medal input').forEach(function(cb){cb.checked=false;});
+    s.medal.forEach(function(v){var cb=document.querySelector('#e_medal input[value="'+v+'"]');if(cb)cb.checked=true;});
+    this.setSpecialty('e',s.specialty);
+    STAT_KEYS.forEach(function(k){IVManager.setValue('e',k,s.ivs[k]);});
+    document.getElementById('e_eggDisplay').innerHTML=s.eggGroups.map(function(g){return'<span class="tag">'+g+'</span>';}).join('');
+    Modal.open('editModal');
+  },
+  saveEdit: function(){
+    if(!this.validate('e'))return;var s=STATE.sprites.find(function(x){return x.id===STATE.editingId;});if(!s)return;
+    s.name=normalizeName(document.getElementById('e_name').value);s.bloodline=document.getElementById('e_bloodline').value.trim();
+    s.nature=document.getElementById('e_nature').value;s.gender=document.getElementById('e_gender').value;
+    s.specialty=this.getSpecialty('e');s.medal=Array.from(document.querySelectorAll('#e_medal input:checked')).map(function(cb){return cb.value;});
+    s.eggGroups=SpriteData.getEggGroups(s.name);s.box=document.getElementById('e_box').value.trim();
+    STAT_KEYS.forEach(function(k){s.ivs[k]=IVManager.getValue('e',k);});
+    saveToStorage();Modal.close('editModal');UI.renderAll();toast('修改已保存','success');
+  }
+};
+
+/* ===== BATCH ===== */
+var BatchManager = {
+  toggleAll: function(c){var f=FilterManager.apply();if(c)f.forEach(function(s){STATE.selectedIds[s.id]=true;});else STATE.selectedIds={};UI.renderBatchBar();UI.renderTable();},
+  toggleOne: function(id){if(STATE.selectedIds[id])delete STATE.selectedIds[id];else STATE.selectedIds[id]=true;UI.renderBatchBar();UI.renderTable();},
+  selectAll: function(){FilterManager.apply().forEach(function(s){STATE.selectedIds[s.id]=true;});UI.renderBatchBar();UI.renderTable();},
+  selectFiltered: function(){var f=FilterManager.apply();f.forEach(function(s){STATE.selectedIds[s.id]=true;});UI.renderBatchBar();UI.renderTable();toast('已选中 '+f.length+' 只','info');},
+  clearAll: function(){STATE.selectedIds={};UI.renderBatchBar();UI.renderTable();},
+  deleteSelected: function(){var ids=Object.keys(STATE.selectedIds);if(!ids.length)return;if(!confirm('确定删除 '+ids.length+' 只精灵？'))return;var s={};ids.forEach(function(id){s[id]=true;});STATE.sprites=STATE.sprites.filter(function(x){return!s[x.id];});STATE.selectedIds={};saveToStorage();UI.renderAll();toast('已删除 '+ids.length+' 只','success');}
+};
+
+/* ===== BREEDING ===== */
+var BreedingEngine = {
+  getMatchCount: function(a,b){return STAT_KEYS.filter(function(k){return a[k]!==0&&b[k]!==0;}).length;},
+  recommend: function(sid){
+    var src=STATE.sprites.find(function(s){return s.id===sid;});if(!src)return[];
+    return STATE.sprites.filter(function(s){return s.id!==sid&&s.gender!==src.gender&&s.eggGroups.some(function(e){return src.eggGroups.includes(e);});})
+      .map(function(c){var sn=c.nature===src.nature,mc=BreedingEngine.getMatchCount(src.ivs,c.ivs),tier=sn&&mc>=4?'best':mc>=2?'good':mc>=1||sn?'ok':'low';return{sprite:c,sameNature:sn,matchCount:mc,tier:tier};})
+      .sort(function(a,b){return b.matchCount-a.matchCount||(a.sameNature?1:0)-(b.sameNature?1:0);});
+  }
+};
+
+/* ===== STATS ===== */
+var StatsModal = {
+  _natureFilter: [],
+  _eggFilter: [],
+  _allNatures: [],
+  _allEggs: [],
+
+  _renderMatrix: function(){
+    var sel = this._natureFilter, container = document.getElementById("statsMatrix");
+    var h = '<div class="sm-cell sm-corner"></div>';
+    for(var c=0;c<6;c++)h+='<div class="sm-cell sm-chdr" onclick="StatsModal._toggleCol('+c+')">+'+COL_HEADERS[c]+'</div>';
+    for(var r=0;r<6;r++){h+='<div class="sm-cell sm-rhdr" onclick="StatsModal._toggleRow('+r+')">-'+ROW_HEADERS[r]+'</div>';
+      for(var c=0;c<6;c++){if(r===c)h+='<div class="sm-cell sm-diag">╲</div>';
+        else{var n=NATURE_MATRIX[r][c],sc=sel.includes(n)?' sm-selected':'';h+='<div class="sm-cell'+sc+'" onclick="StatsModal._toggleNature(\''+n+'\')">'+n+'</div>';}}}
+    container.innerHTML = h;
+  },
+
+  _renderEggTags: function(){
+    var sel = this._eggFilter, container = document.getElementById("statsEggTags");
+    var h = '';
+    for(var i=0;i<this._allEggs.length;i++){
+      var e=this._allEggs[i],ch=sel.includes(e)?' checked':'';
+      h+='<label><input type="checkbox" value="'+e+'"'+ch+' onchange="StatsModal._onEggChange()">'+e+'</label>';
+    }
+    container.innerHTML = h;
+  },
+
+  _toggleNature: function(n){var i=this._natureFilter.indexOf(n);if(i>=0)this._natureFilter.splice(i,1);else this._natureFilter.push(n);this._renderMatrix();this.render();},
+  _toggleRow: function(r){var rn=NATURE_MATRIX[r].filter(function(n){return n!==null;}),all=rn.every(function(n){return StatsModal._natureFilter.includes(n);});if(all)rn.forEach(function(n){var i=StatsModal._natureFilter.indexOf(n);if(i>=0)StatsModal._natureFilter.splice(i,1);});else rn.forEach(function(n){if(!StatsModal._natureFilter.includes(n))StatsModal._natureFilter.push(n);});this._renderMatrix();this.render();},
+  _toggleCol: function(c){var cn=[];for(var r=0;r<6;r++)if(r!==c)cn.push(NATURE_MATRIX[r][c]);var all=cn.every(function(n){return StatsModal._natureFilter.includes(n);});if(all)cn.forEach(function(n){var i=StatsModal._natureFilter.indexOf(n);if(i>=0)StatsModal._natureFilter.splice(i,1);});else cn.forEach(function(n){if(!StatsModal._natureFilter.includes(n))StatsModal._natureFilter.push(n);});this._renderMatrix();this.render();},
+  _onEggChange: function(){this._eggFilter=Array.from(document.querySelectorAll("#statsEggTags input:checked")).map(function(cb){return cb.value;});this.render();},
+  clearFilters: function(){this._natureFilter=[];this._eggFilter=[];this._renderMatrix();this._renderEggTags();this.render();},
+
+  exportCSV: function(){
+    var mode=document.getElementById("statsViewMode").value,sd=STATE.statsShowDetail;
+    var males=STATE.sprites.filter(function(s){return s.gender==="雄性";});
+    if(this._natureFilter.length)males=males.filter(function(s){return StatsModal._natureFilter.includes(s.nature);});
+    var nl=Array.from(new Set(males.map(function(s){return s.nature;}))).sort();
+    var el=this._eggFilter.length?this._eggFilter.slice().sort():Array.from(new Set(males.flatMap(function(s){return s.eggGroups;}))).filter(function(e){return e!=="无法孵蛋";}).sort();
+    var grid={};
+    males.forEach(function(s){s.eggGroups.forEach(function(e){if(e==="无法孵蛋")return;var k=s.nature+"|"+e;if(!grid[k])grid[k]=[];grid[k].push(s);});});
+    var rows=mode==="nature-egg"?nl:el,cols=mode==="nature-egg"?el:nl;
+    function gk(r,c){return mode==="nature-egg"?(r+"|"+c):(c+"|"+r);}
+    var hdr='"'+(mode==="nature-egg"?"性格 \\ 蛋组":"蛋组 \\ 性格")+'"';
+    cols.forEach(function(c){hdr+=',"'+c+'"';});
+    var csvLines=[hdr];
+    rows.forEach(function(r){
+      var line='"'+r+'"';
+      cols.forEach(function(c){
+        var entries=grid[gk(r,c)]||[];
+        if(!entries.length)line+=',""';
+        else{
+          var cell=entries.map(function(x){
+            if(sd){var ivs=STAT_KEYS.filter(function(k){return x.ivs[k]!==0;}).map(function(k){return STAT_EMOJI[k]+x.ivs[k];}).join(" ");return x.name+(ivs?" ("+ivs+")":"");}
+            else return x.name;
+          }).join("; ");
+          line+=',"'+cell+'"';
+        }
+      });
+      csvLines.push(line);
+    });
+    var csv='﻿'+csvLines.join('\n');
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='rocom_breeding_stats_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+    toast('导出成功 ('+csvLines.length+' 行)', 'success');
+  },
+
+  open: function(){
+    Modal.open("statsModal");
+    var males=STATE.sprites.filter(function(s){return s.gender==="雄性";});
+    this._allNatures=Array.from(new Set(males.map(function(s){return s.nature;}))).sort();
+    this._allEggs=["动物组","拟人组","巨灵组","魔力组","天空组","两栖组","植物组","大地组","妖精组","昆虫组","软体组","海洋组","机械组","龙组"];
+    this._renderMatrix();
+    this._renderEggTags();
+    this.render();
+  },
+  toggleDetail: function(){STATE.statsShowDetail=!STATE.statsShowDetail;var t=document.getElementById("statsDetailToggle");if(STATE.statsShowDetail)t.classList.add("on");else t.classList.remove("on");this.render();},
+  render: function(){
+    var mode=document.getElementById("statsViewMode").value,sd=STATE.statsShowDetail;
+    var t=document.getElementById("statsDetailToggle");if(sd)t.classList.add("on");else t.classList.remove("on");
+    var males=STATE.sprites.filter(function(s){return s.gender==="雄性";});
+    if(this._natureFilter.length)males=males.filter(function(s){return StatsModal._natureFilter.includes(s.nature);});
+    var nl=Array.from(new Set(males.map(function(s){return s.nature;}))).sort();
+    var el;
+    if(this._eggFilter.length){
+      el=this._eggFilter.slice().sort();
+    } else {
+      el=Array.from(new Set(males.flatMap(function(s){return s.eggGroups;}))).filter(function(e){return e!=="无法孵蛋";}).sort();
+    }
+    var grid={};
+    males.forEach(function(s){s.eggGroups.forEach(function(e){if(e==="无法孵蛋")return;var k=s.nature+"|"+e;if(!grid[k])grid[k]=[];grid[k].push(s);});});
+    var rows=mode==="nature-egg"?nl:el,cols=mode==="nature-egg"?el:nl;
+    function gk(r,c){return mode==="nature-egg"?(r+"|"+c):(c+"|"+r);}
+    var h='<table class="stats-table"><thead><tr><th>'+(mode==="nature-egg"?'性格 \\ 蛋组':'蛋组 \\ 性格')+'</th>'+cols.map(function(c){return'<th>'+c+'</th>';}).join('')+'</tr></thead><tbody>';
+    rows.forEach(function(r){h+='<tr><th>'+r+'</th>';cols.forEach(function(c){var e=grid[gk(r,c)]||[];if(!e.length)h+='<td class="stats-empty">-</td>';else{h+='<td>';e.forEach(function(x){h+='<div class="stats-entry"><div class="se-name">'+x.name+'</div>';if(sd){var ivs=STAT_KEYS.filter(function(k){return x.ivs[k]!==0;}).map(function(k){return STAT_EMOJI[k]+x.ivs[k];}).join(' ');if(ivs)h+='<div class="se-ivs">'+ivs+'</div>';}h+='</div>';});h+='</td>';}});h+='</tr>';});
+    h+='</tbody></table>';document.getElementById("statsGridWrap").innerHTML=h;
+    document.getElementById("statsSummary").textContent='雄性: '+males.length+' | 性格: '+nl.length+' | 蛋组: '+el.length+' | 性格筛选: '+(this._natureFilter.length||'全部')+' | 蛋组筛选: '+(this._eggFilter.length||'全部');
+  }
+};
+
+/* ===== BREEDING MODAL ===== */
+var BreedingModal = {
+  open: function(sid){
+    Modal.open('breedingModal');var src=STATE.sprites.find(function(s){return s.id===sid;});if(!src)return;
+    var iv=STAT_KEYS.filter(function(k){return src.ivs[k]!==0;}).map(function(k){return STAT_EMOJI[k]+src.ivs[k];}).join(' ')||'无';
+    document.getElementById('breedingSource').innerHTML='<div class="bs-name">'+src.name+'</div><div class="bs-detail">性别: '+src.gender+' | 性格: '+src.nature+'</div><div class="bs-detail">蛋组: '+src.eggGroups.join(', ')+' | 盒子: '+(src.box||'无')+'</div><div class="bs-detail">非零个体值: '+iv+'</div><div style="margin-top:8px;"><button class="btn btn-outline btn-sm" onclick="Modal.close(\'breedingModal\')">关闭</button></div>';
+    var rs=BreedingEngine.recommend(sid);if(!rs.length){document.getElementById('breedingResults').innerHTML='<p style="text-align:center;padding:40px;color:var(--c-text-muted);">未找到符合条件的异性蛋组匹配精灵</p>';return;}
+    var tl={best:'最优',good:'次优',ok:'一般',low:'基础'},tc={best:'bi-score-best',good:'bi-score-good',ok:'bi-score-ok',low:''};
+    document.getElementById('breedingResults').innerHTML='<div style="font-size:0.85rem;color:var(--c-text-secondary);margin-bottom:8px;">共 <strong>'+rs.length+'</strong> 个匹配</div>'+rs.map(function(r){var s=r.sprite,ivs=STAT_KEYS.filter(function(k){return s.ivs[k]!==0;}).map(function(k){return STAT_EMOJI[k]+s.ivs[k];}).join(' ')||'无';
+      return'<div class="breeding-item '+r.tier+'"><div class="bi-name">'+s.name+'</div><div class="bi-info">'+s.gender+' | '+s.nature+' | 蛋组: '+s.eggGroups.join(',')+' | IV: '+ivs+'</div><div class="bi-score '+(tc[r.tier]||'')+'">'+(r.sameNature?'♊同性格 ':'')+r.matchCount+'位重叠 | '+tl[r.tier]+'</div></div>';}).join('');
+  }
+};
+
+/* ===== UI ===== */
+var UI = {
+  triggerImport: function(){document.getElementById('csvFileInput').click();},
+  handleFileImport: function(input){
+    var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){var bytes=new Uint8Array(e.target.result);var txt=new TextDecoder('utf-8').decode(bytes);if(txt.indexOf('名称')===-1){try{txt=new TextDecoder('gbk').decode(bytes);}catch(ex){try{txt=new TextDecoder('gb2312').decode(bytes);}catch(ex2){}}}var p=CSVManager.parse(txt);STATE.pendingCSV=p;if(STATE.sprites.length){document.getElementById('conflictLocalCount').textContent=STATE.sprites.length;document.getElementById('conflictFileCount').textContent=p.length;Modal.open('conflictModal');}else CSVManager.confirmOverwrite();};r.readAsArrayBuffer(f);input.value='';
+  },
+  renderAll: function(){UI.renderFilterChips();UI.renderTable();UI.renderBatchBar();document.getElementById('headerCount').textContent=STATE.sprites.length;var ts=Array.from(new Set(STATE.sprites.map(function(s){return s.bloodline;}).filter(Boolean))).sort();document.getElementById('typeSuggest').innerHTML=ts.map(function(t){return'<option value="'+t+'">';}).join('');FormManager.updateBoxSuggest();},
+  renderFilterChips: function(){
+    function chip(label,icon,field,hasMode){var sel=STATE.filters[field]||[],act=typeof sel==='string'?!!sel:sel.length>0,cs=act?' active':'',cs2='';if(typeof sel!=='string'&&sel.length)cs2=' <span class="count">('+sel.length+')</span>';else if(typeof sel==='string'&&act)cs2=' <span class="count">('+sel+')</span>';
+      var h='<div class="filter-chip'+cs+'" onclick="FilterManager.onChipClick(\''+field+'\',this)">'+icon+' '+label+cs2;if(hasMode){var m=STATE.filterModes[field]||'AND';h+='<span class="filter-mode-badge'+(m==='AND'?' and':'')+'" onclick="event.stopPropagation();var m=STATE.filterModes.'+field+';STATE.filterModes.'+field+'=m===\'AND\'?\'OR\':\'AND\';UI.renderAll();">'+m+'</span>';}h+='</div>';return h;}
+    var html=chip('名称','🔤','name',false)+chip('属性','🔮','attribute',false)+chip('血脉','🏷','bloodline',false)+chip('性别','⚥','gender',true)+chip('特长','⭐','specialty',true)+chip('奖牌','🏅','medal',true)+chip('蛋组','🥚','eggGroup',true)+chip('盒子','📦','box',true);
+    document.getElementById('filterChips').innerHTML=html;
+  },
+  renderTable: function(){
+    var tb=document.getElementById('tableBody'),filtered=FilterManager.apply();
+    if(!filtered.length&&!STATE.sprites.length){tb.innerHTML='';document.getElementById('emptyState').style.display='block';document.getElementById('tableWrap').style.display='none';document.getElementById('selectAllCheckbox').checked=false;return;}
+    document.getElementById('emptyState').style.display='none';document.getElementById('tableWrap').style.display='block';
+    if(!filtered.length){tb.innerHTML='<tr><td colspan="17" style="text-align:center;padding:30px;color:var(--c-text-muted);">暂无匹配数据</td></tr>';document.getElementById('selectAllCheckbox').checked=false;return;}
+    var an=STATE.filters.nature.length===1?STATE.filters.nature[0]:null,eff=an?NATURE_EFFECTS[an]:null,pk=eff?eff.add:null,mk=eff?eff.sub:null;
+    tb.innerHTML=filtered.map(function(s){var ch=STATE.selectedIds[s.id]?' checked':'',rc=STATE.selectedIds[s.id]?' selected-row':'';
+      function ivc(k){var cls='';if(k===pk)cls=' col-iv-plus';else if(k===mk)cls=' col-iv-minus';return'<td class="'+cls+'">'+(s.ivs[k]===0?'-':s.ivs[k])+'</td>';}
+      return'<tr class="'+rc+'"><td style="text-align:center;"><input type="checkbox"'+ch+' onclick="event.stopPropagation();BatchManager.toggleOne(\''+s.id+'\')"></td>'+
+        '<td>'+s.name+'</td><td>'+s.attribute+'</td><td>'+s.bloodline+'</td><td>'+s.nature+'</td><td>'+s.gender+'</td>'+
+        '<td><div class="cell-tags">'+s.specialty.map(function(x){return'<span class="tag tag-spec">'+x+'</span>';}).join('')+'</div></td>'+
+        '<td><div class="cell-tags">'+s.medal.map(function(x){return'<span class="tag tag-medal">'+x+'</span>';}).join('')+'</div></td>'+
+        '<td><div class="cell-tags">'+s.eggGroups.map(function(x){return'<span class="tag tag-egg">'+x+'</span>';}).join('')+'</div></td>'+
+        '<td>'+(s.box?'<span class="tag tag-box">'+s.box+'</span>':'')+'</td>'+
+        ivc('hp')+ivc('atk')+ivc('spAtk')+ivc('def')+ivc('spDef')+ivc('spd')+
+        '<td><button class="btn btn-outline btn-xs" onclick="FormManager.openEdit(\''+s.id+'\')">✏️</button> <button class="btn btn-primary btn-xs" onclick="BreedingModal.open(\''+s.id+'\')">💕</button> <button class="btn btn-danger btn-xs" onclick="if(confirm(\'确定删除「'+s.name+'」？\')){STATE.sprites=STATE.sprites.filter(function(x){return x.id!==\''+s.id+'\';});saveToStorage();UI.renderAll();toast(\'已删除\',\'success\');}">🗑</button></td></tr>';
+    }).join('');
+    var af={};filtered.forEach(function(s){af[s.id]=true;});
+    var allSel=filtered.every(function(s){return STATE.selectedIds[s.id];}),someSel=filtered.some(function(s){return STATE.selectedIds[s.id];});
+    document.getElementById('selectAllCheckbox').checked=allSel;document.getElementById('selectAllCheckbox').indeterminate=!allSel&&someSel;
+  },
+  renderBatchBar: function(){var c=Object.keys(STATE.selectedIds).length,d=document.getElementById('batchBar');document.getElementById('batchCount').textContent=c;if(c>0)d.classList.add('active');else d.classList.remove('active');}
+};
+
+
+/* ===== BOX PANEL MANAGER ===== */
+var BoxPanel = {
+  _targetBox: null,
+  _undoStack: [],
+  _redoStack: [],
+  _customBoxes: [],
+
+  open: function(){
+    document.getElementById('boxSidebar').classList.add('active');
+    this._targetBox = null;
+    this.render();
+  },
+
+  close: function(){
+    document.getElementById('boxSidebar').classList.remove('active');
+  },
+
+  getBoxes: function(){
+    var boxes = {};
+    // Collect from sprites
+    STATE.sprites.forEach(function(s){
+      var b = s.box || '未分类';
+      boxes[b] = (boxes[b]||0) + 1;
+    });
+    // Ensure 未分类 exists
+    if (!boxes['未分类']) boxes['未分类'] = 0;
+    // Add custom boxes (empty ones)
+    var self = this;
+    this._customBoxes.forEach(function(b){
+      if (!boxes[b]) boxes[b] = 0;
+    });
+    return boxes;
+  },
+
+  render: function(){
+    var boxes = this.getBoxes();
+    var names = Object.keys(boxes).sort(function(a,b){
+      if (a==='未分类') return -1;
+      if (b==='未分类') return 1;
+      return a.localeCompare(b);
+    });
+
+    var self = this;
+    var h = '';
+    names.forEach(function(name){
+      var count = boxes[name], isFull = count >= 30, isUndeletable = name === '未分类';
+      var selClass = self._targetBox === name ? ' selected' : '';
+      var fullClass = isFull ? ' full' : '';
+      h += '<div class="box-card' + selClass + fullClass + (isUndeletable?' undeletable':'') + '" onclick="BoxPanel.selectBox(\'' + name.replace(/'/g, "\\'") + '\')">';
+      if (!isUndeletable) h += '<button class="box-delete" onclick="event.stopPropagation();BoxPanel.deleteBox(\'' + name.replace(/'/g, "\\'") + '\')">×</button>';
+      h += '<div class="box-name">' + name + '</div>';
+      h += '<div class="box-count' + (isFull?' full-count':'') + '">' + count + ' / 30</div>';
+      h += '</div>';
+    });
+    // New box card
+    h += '<div class="box-card-new" id="boxNewCard" onclick="BoxPanel.startCreate()"><div class="box-new-icon">+</div><div class="box-new-label">新建盒子</div></div>';
+    document.getElementById('boxGrid').innerHTML = h;
+
+    // Update buttons
+    var selCount = Object.keys(STATE.selectedIds).length;
+    document.getElementById('btnMoveBox').disabled = !this._targetBox || selCount === 0;
+    var btnUndo = document.getElementById('btnUndoBox');
+    if (this._undoStack.length > 0) { btnUndo.textContent = '↩ 撤销'; btnUndo.disabled = false; }
+    else if (this._redoStack.length > 0) { btnUndo.textContent = '↪ 重做'; btnUndo.disabled = false; }
+    else { btnUndo.textContent = '↩ 撤销'; btnUndo.disabled = true; }
+  },
+
+  selectBox: function(name){
+    this._targetBox = (this._targetBox === name) ? null : name;
+    this.render();
+  },
+
+  startCreate: function(){
+    var card = document.getElementById('boxNewCard');
+    card.innerHTML = '<input class="box-new-input" id="boxNewInput" placeholder="盒子名称…" maxlength="20">';
+    var input = document.getElementById('boxNewInput');
+    input.focus();
+    input.addEventListener('blur', function(){ BoxPanel.finishCreate(input.value.trim()); });
+    input.addEventListener('keydown', function(e){
+      if (e.key==='Enter'){ BoxPanel.finishCreate(input.value.trim()); }
+      else if (e.key==='Escape'){ BoxPanel.render(); }
+    });
+  },
+
+  finishCreate: function(name){
+    if (!name || name === '未分类') { this.render(); return; }
+    // Check if box already exists
+    var boxes = this.getBoxes();
+    if (boxes[name] !== undefined && this._customBoxes.indexOf(name) === -1) {
+      // Already exists from sprite data, just select it
+      this._targetBox = name;
+      this.render();
+      return;
+    }
+    if (this._customBoxes.indexOf(name) === -1) {
+      this._customBoxes.push(name);
+    }
+    this._targetBox = name;
+    this.render();
+  },
+
+  deleteBox: function(name){
+    if (name === '未分类') return;
+    if (!confirm('删除盒子「' + name + '」？盒内精灵将移至"未分类"。')) return;
+    // Move sprites to 未分类
+    STATE.sprites.forEach(function(s){ if (s.box === name) s.box = ''; });
+    // Remove from custom boxes
+    var idx = this._customBoxes.indexOf(name);
+    if (idx >= 0) this._customBoxes.splice(idx, 1);
+    if (this._targetBox === name) this._targetBox = null;
+    saveToStorage();
+    this.render();
+    UI.renderAll();
+    toast('已删除盒子「' + name + '」', 'info');
+  },
+
+  moveSelected: function(){
+    if (!this._targetBox) return;
+    var target = this._targetBox === '未分类' ? '' : this._targetBox;
+    var selIds = Object.keys(STATE.selectedIds);
+    if (!selIds.length) { toast('请先在表格中勾选精灵', 'error'); return; }
+
+    // Filter out sprites already in target box
+    var toMove = [];
+    selIds.forEach(function(id){
+      var s = STATE.sprites.find(function(x){ return x.id === id; });
+      if (s && s.box !== target) toMove.push(s);
+    });
+    if (!toMove.length) { toast('选中的精灵已在目标盒子中', 'info'); return; }
+
+    // Check capacity
+    var currentInTarget = STATE.sprites.filter(function(s){ return s.box === target; }).length;
+    if (currentInTarget + toMove.length > 30) {
+      toast('目标盒子容量不足！（当前 ' + currentInTarget + ' + 待移入 ' + toMove.length + ' > 30）', 'error');
+      return;
+    }
+
+    // Record original boxes for undo
+    var undoEntry = toMove.map(function(s){ return { id: s.id, fromBox: s.box || '' }; });
+    this._undoStack.push({ entries: undoEntry, toBox: target });
+    this._redoStack = [];
+
+    // Execute move
+    toMove.forEach(function(s){ s.box = target; });
+    saveToStorage();
+    // Keep selected (don't clear)
+    this.render();
+    UI.renderAll();
+    toast('已将 ' + toMove.length + ' 只精灵移至「' + (this._targetBox) + '」', 'success');
+  },
+
+  undo: function(){
+    var btn = document.getElementById('btnUndoBox');
+    if (this._undoStack.length) {
+      var action = this._undoStack.pop();
+      action.entries.forEach(function(e){
+        var s = STATE.sprites.find(function(x){ return x.id === e.id; });
+        if (s) s.box = e.fromBox;
+      });
+      this._redoStack.push(action);
+      saveToStorage(); this.render(); UI.renderAll();
+      toast('已撤销移动操作', 'info');
+    } else if (this._redoStack.length) {
+      var action = this._redoStack.pop();
+      action.entries.forEach(function(e){
+        var s = STATE.sprites.find(function(x){ return x.id === e.id; });
+        if (s) s.box = action.toBox;
+      });
+      this._undoStack.push(action);
+      saveToStorage(); this.render(); UI.renderAll();
+      toast('已重做移动操作', 'info');
+    }
+    if (this._undoStack.length) { btn.textContent = '↩ 撤销'; btn.disabled = false; }
+    else if (this._redoStack.length) { btn.textContent = '↪ 重做'; btn.disabled = false; }
+    else { btn.textContent = '↩ 撤销'; btn.disabled = true; }
+  },
+
+};
+
+
+/* ===== INIT ===== */
+function init(){
+  loadFromStorage();
+  if(STATE.statsShowDetail)document.getElementById('statsDetailToggle').classList.add('on');
+  FormManager.init();MatrixManager.init();UI.renderAll();
+  document.getElementById('btnSaveEdit').addEventListener('click',function(){FormManager.saveEdit();});
+  document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('active');});});
+  document.addEventListener('click',function(e){var p=document.getElementById('floatPanel');if(p.style.display==='flex'&&!p.contains(e.target)&&!e.target.closest('.filter-chip'))FilterManager.closeFloat();});
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+
+</body></html>
