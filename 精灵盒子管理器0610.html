@@ -137,9 +137,9 @@ body {
 .form-nature-display { font-size: 0.82rem; color: var(--c-primary-dark); font-weight: 600; margin-top: 4px; min-height: 20px; }
 
 /* ===== IV Slider + Editable ===== */
-.iv-slider-group { display: flex; gap: 14px; flex-wrap: wrap; }
+.iv-slider-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; max-width: 320px; }
 .iv-slider-item {
-  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 72px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
 .iv-slider-item .iv-label { font-size: 0.75rem; font-weight: 600; }
 .iv-slider-item .iv-value-display {
@@ -161,9 +161,9 @@ body {
 .iv-slider-item.editing .iv-value-edit { display: block; }
 .iv-slider-item input[type="range"] {
   -webkit-appearance: none; appearance: none;
-  width: 64px; height: 6px; border-radius: 3px;
+  width: 100%; height: 6px; border-radius: 3px;
   background: linear-gradient(to right, #d1d5db 0%, #fbbf24 25%, #3b82f6 50%, #8b5cf6 75%, #ec4899 100%);
-  outline: none; cursor: pointer;
+  outline: none; cursor: pointer; margin: 0;
 }
 .iv-slider-item input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
@@ -177,8 +177,8 @@ body {
   cursor: pointer; box-shadow: var(--shadow-sm);
 }
 .iv-slider-ticks {
-  display: flex; justify-content: space-between; width: 64px;
-  font-size: 0.6rem; color: var(--c-text-muted); padding: 0 2px;
+  display: flex; justify-content: space-between; width: 100%;
+  font-size: 0.6rem; color: var(--c-text-muted); padding: 0;
 }
 
 /* ===== Radio chips (specialty single-select) ===== */
@@ -1238,13 +1238,12 @@ var UI = {
     if(!filtered.length&&!STATE.sprites.length){tb.innerHTML='';document.getElementById('emptyState').style.display='block';document.getElementById('tableWrap').style.display='none';document.getElementById('selectAllCheckbox').checked=false;return;}
     document.getElementById('emptyState').style.display='none';document.getElementById('tableWrap').style.display='block';
     if(!filtered.length){tb.innerHTML='<tr><td colspan="17" style="text-align:center;padding:30px;color:var(--c-text-muted);">暂无匹配数据</td></tr>';document.getElementById('selectAllCheckbox').checked=false;return;}
-    var an=STATE.filters.nature.length===1?STATE.filters.nature[0]:null,eff=an?NATURE_EFFECTS[an]:null,pk=eff?eff.add:null,mk=eff?eff.sub:null;
-    tb.innerHTML=filtered.map(function(s){var ch=STATE.selectedIds[s.id]?' checked':'',rc=STATE.selectedIds[s.id]?' selected-row':'';
-      function ivc(k){var cls='';if(k===pk)cls=' col-iv-plus';else if(k===mk)cls=' col-iv-minus';return'<td class="'+cls+'">'+(s.ivs[k]===0?'-':s.ivs[k])+'</td>';}
+    tb.innerHTML=filtered.map(function(s){var ch=STATE.selectedIds[s.id]?' checked':'',rc=STATE.selectedIds[s.id]?' selected-row':'',eff=NATURE_EFFECTS[s.nature];
+      function ivc(k){var cls='';if(eff){if(k===eff.add)cls=' col-iv-plus';else if(k===eff.sub)cls=' col-iv-minus';}return'<td class="'+cls+'">'+(s.ivs[k]===0?'-':s.ivs[k])+'</td>';}
       return'<tr class="'+rc+'"><td style="text-align:center;"><input type="checkbox"'+ch+' onclick="event.stopPropagation();BatchManager.toggleOne(\''+s.id+'\')"></td>'+
         '<td>'+s.name+'</td><td>'+s.attribute+'</td><td>'+s.bloodline+'</td><td>'+s.nature+'</td><td>'+s.gender+'</td>'+
         '<td><div class="cell-tags">'+s.specialty.map(function(x){return'<span class="tag tag-spec">'+x+'</span>';}).join('')+'</div></td>'+
-        '<td><div class="cell-tags">'+s.medal.map(function(x){return'<span class="tag tag-medal">'+x+'</span>';}).join('')+'</div></td>'+
+        '<td><div class="cell-tags">'+s.medal.filter(function(x){return x!=='无'&&x!=='';}).map(function(x){return'<span class="tag tag-medal">'+x+'</span>';}).join('')+'</div></td>'+
         '<td><div class="cell-tags">'+s.eggGroups.map(function(x){return'<span class="tag tag-egg">'+x+'</span>';}).join('')+'</div></td>'+
         '<td>'+(s.box?'<span class="tag tag-box">'+s.box+'</span>':'')+'</td>'+
         ivc('hp')+ivc('atk')+ivc('spAtk')+ivc('def')+ivc('spDef')+ivc('spd')+
